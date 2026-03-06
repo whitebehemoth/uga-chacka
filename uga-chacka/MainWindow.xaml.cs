@@ -317,7 +317,7 @@ namespace uga_chacka
             var variants = string.Join(" | ", h.Variants.Select(v =>
                 $"{v.Index}. {v.Target}" +
                 (v.LemmatDef is { Count: > 0 } ? $" ({string.Join(", ", v.LemmatDef)})" : "")));
-            StatusCurrentHomograph.Text = $"[{h.Confidence:P0}] {h.OriginalWord}: {variants}";
+            StatusCurrentHomograph.Text = $"[{h.Confidence * 100:P0}] {h.OriginalWord}: {variants} ({h.Reasoning})";
         }
 
         // ── Font size: Ctrl + Mouse Wheel ────────────────────────────────────

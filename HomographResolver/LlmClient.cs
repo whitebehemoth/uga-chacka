@@ -40,7 +40,7 @@ public class LlmClient : IDisposable
             var url = _settings.Url;
             var response = await _http.PostAsJsonAsync(url, request, ct);
             response.EnsureSuccessStatusCode();
-            var text = await response.Content.ReadAsStringAsync();
+            //var text = await response.Content.ReadAsStringAsync();
             json = await response.Content.ReadFromJsonAsync<JsonElement>(ct);
         }
         catch (Exception ex) {
@@ -60,7 +60,7 @@ public class LlmClient : IDisposable
             {
                 var jsonStr = content[jsonStart..(jsonEnd + 1)];
                 var choice = JsonSerializer.Deserialize<LlmChoice>(jsonStr);
-                if (choice != null && choice.Index >= 1 && choice.Index <= variants.Count)
+                if (choice != null && choice.Index >= 0 && choice.Index <= variants.Count)
                     return choice;
             }
         }

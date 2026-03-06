@@ -52,10 +52,6 @@
                 </ItemsPanelTemplate>
             </StatusBar.ItemsPanel>
             <!-- right section: current homograph info during navigation -->
-            <StatusBarItem DockPanel.Dock="Right" Padding="6,0">
-                <TextBlock x:Name="StatusCurrentHomograph"/>
-            </StatusBarItem>
-            <Separator DockPanel.Dock="Right"/>
             <!-- left section: text analysis statistics -->
             <StatusBarItem Padding="6,0">
                 <StackPanel Orientation="Horizontal">
@@ -65,9 +61,11 @@
                     <TextBlock x:Name="StatusSentences" Text="—"/>
                     <TextBlock Text="   Омографов: " Margin="8,0,0,0"/>
                     <TextBlock x:Name="StatusHomographCount" Text="—"/>
-                    <TextBlock Text="   Время: ~" Margin="8,0,0,0"/>
-                    <TextBlock x:Name="StatusTime" Text="—"/>
                 </StackPanel>
+            </StatusBarItem>
+            <Separator />
+            <StatusBarItem Padding="6,0">
+                <TextBlock x:Name="StatusCurrentHomograph"/>
             </StatusBarItem>
         </StatusBar>
 
