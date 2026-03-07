@@ -21,6 +21,7 @@ namespace uga_chacka
         private List<(ResolvedHomograph Homograph, Run Run)> _lowConfidence = [];
         private int _currentHomographIndex = -1;
         private Run? _highlightedRun;
+        private bool _suppressResultTextChanged;
 
         private static readonly string SettingsPath = Path.Combine(
             AppContext.BaseDirectory, "appsettings.json");
@@ -335,6 +336,7 @@ namespace uga_chacka
 
         private void ShowResult(string text, List<ResolvedHomograph> homographs, double threshold)
         {
+            _suppressResultTextChanged = true;
             var doc = new FlowDocument
             {
                 FontFamily = new FontFamily("Segoe UI"),
@@ -376,6 +378,7 @@ namespace uga_chacka
 
             doc.Blocks.Add(para);
             ResultText.Document = doc;
+            _suppressResultTextChanged = false;
 
             bool hasLow = _lowConfidence.Count > 0;
             PrevHomographBtn.IsEnabled = hasLow;
@@ -430,9 +433,7 @@ namespace uga_chacka
             {
                 ManualEditWarning.Visibility = Visibility.Visible;
             }
-            var variants = string.Join(" | ", h.Variants.Select(v =>
-                $"{v.Index}. {v.Target}" +
-                (v.LemmatDef.Count > 0 ? $" ({string.Join(", ", v.LemmatDef)})" : "")));
+            var variants = string.Join(" | ", h.Variants.Select(v => v.Target ));
             var reasoning = string.IsNullOrWhiteSpace(h.Reasoning) ? "" : $" ({h.Reasoning})";
             StatusCurrentHomograph.Text = $"[{h.Confidence:P0}] {h.OriginalWord}: {variants}{reasoning}";
         }
@@ -445,6 +446,15 @@ namespace uga_chacka
             var control = (Control)sender;
             control.FontSize = Math.Clamp(control.FontSize + (e.Delta > 0 ? 1 : -1), 8, 48);
             e.Handled = true;
+        }
+
+        private void ResultText_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (_suppressResultTextChanged) return;
+
+            var text = GetResultPlainText();
+            if (string.IsNullOrWhiteSpace(text))
+                ResetHomographState();
         }
 
         // ── Browse dialogs ───────────────────────────────────────────────────
@@ -490,9 +500,9 @@ namespace uga_chacka
             if (_lowConfidence.Count == 0 || _currentHomographIndex < 0) return;
 
             var (homograph, run) = _lowConfidence[_currentHomographIndex];
-            var variant = homograph.Variants.FirstOrDefault(v => v.Index == variantIndex);
-            if (variant == null) return;
+            if (homograph.Variants.Count < variantIndex) return;
 
+            var variant = homograph.Variants[variantIndex-1];
             var oldLength = run.Text.Length;
             run.Text = variant.Target;
             homograph.StressedWord = variant.Target;
@@ -578,6 +588,20 @@ namespace uga_chacka
         {
             if (Path.IsPathRooted(path)) return path;
             return Path.Combine(AppContext.BaseDirectory, path);
+        }
+
+        private void ResetHomographState()
+        {
+            _allHomographs = [];
+            _lowConfidence.Clear();
+            _currentHomographIndex = -1;
+            _highlightedRun = null;
+            PrevHomographBtn.IsEnabled = false;
+            NextHomographBtn.IsEnabled = false;
+            HomographIndexText.Text = "";
+            StatusCurrentHomograph.Text = "";
+            StatusHomographCount.Text = "0";
+            ManualEditWarning.Visibility = Visibility.Collapsed;
         }
 
         private class ProjectState

@@ -132,6 +132,7 @@
                                  FontFamily="Segoe UI"
                                  Padding="6"
                                  AcceptsTab="True"
+                                 TextChanged="ResultText_TextChanged"
                                  PreviewMouseWheel="Text_PreviewMouseWheel"/>
                 </Grid>
             </TabItem>

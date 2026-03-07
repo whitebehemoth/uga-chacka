@@ -39,8 +39,8 @@ public class LlmClient : IDisposable
         {
             var url = _settings.Url;
             var response = await _http.PostAsJsonAsync(url, request, ct);
+            var text = await response.Content.ReadAsStringAsync();
             response.EnsureSuccessStatusCode();
-            //var text = await response.Content.ReadAsStringAsync();
             json = await response.Content.ReadFromJsonAsync<JsonElement>(ct);
         }
         catch (Exception ex) {
@@ -66,7 +66,7 @@ public class LlmClient : IDisposable
         }
         catch { /* parse error — fall through to default */ }
 
-        return new LlmChoice { Index = 1, Confidence = 0.0 };
+        return new LlmChoice { Index = 0, Confidence = 0.0 };
     }
 
     private static string BuildUserPrompt(

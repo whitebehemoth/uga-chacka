@@ -57,7 +57,7 @@ public static partial class Resolver
             }
             catch
             {
-                choice = new LlmChoice { Index = 1, Confidence = 0.0 };
+                choice = new LlmChoice { Index = 0, Confidence = 0.0 };
             }
 
             var chosen = match.Variants.FirstOrDefault(v => v.Index == choice.Index)
@@ -72,7 +72,7 @@ public static partial class Resolver
                 Confidence = choice.Confidence,
                 OriginalPosition = match.Start,
                 OriginalLength = match.Length,
-                Variants = match.Variants
+                Variants = match.Variants.OrderBy(v => v.Target.IndexOf("+")).ToList()
             });
 
             progress?.Report((i + 1, matches.Count));
