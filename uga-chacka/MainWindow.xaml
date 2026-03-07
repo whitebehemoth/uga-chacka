@@ -6,7 +6,8 @@
         xmlns:local="clr-namespace:uga_chacka"
         mc:Ignorable="d"
         Title="Озвучка книг" Height="650" Width="1000"
-        MinHeight="400" MinWidth="640">
+        MinHeight="400" MinWidth="640"
+        PreviewKeyDown="Window_PreviewKeyDown">
 
     <Window.CommandBindings>
         <CommandBinding Command="ApplicationCommands.Open" Executed="Open_Click"/>
@@ -27,7 +28,9 @@
                     <MenuItem Header="Кодировка 1251 (win)" Tag="1251" Click="OpenNonUnicode_Click"/>
                     <MenuItem Header="Кодировка 866 (DOS)" Tag="866" Click="OpenNonUnicode_Click"/>
                 </MenuItem>
+                <MenuItem Header="Открыть проект" Click="OpenProject_Click"/>
                 <MenuItem Header="_Сохранить"  Command="ApplicationCommands.Save" InputGestureText="Ctrl+S"/>
+                <MenuItem Header="Сохранить проект" Click="SaveProject_Click"/>
                 <Separator/>
                 <MenuItem Header="_Выход" Click="Exit_Click"/>
             </MenuItem>
@@ -112,6 +115,13 @@
                                     IsEnabled="False"
                                     Padding="8,2"
                                     Click="NextHomograph_Click"/>
+                            <Separator/>
+                            <TextBlock x:Name="ManualEditWarning"
+                                       Foreground="Red"
+                                       VerticalAlignment="Center"
+                                       Margin="8,0,0,0"
+                                       Visibility="Collapsed"
+                                       Text="Омографы были модифицированы вручную, навигация может сбоить"/>
                         </ToolBar>
                     </ToolBarTray>
                     <RichTextBox x:Name="ResultText"

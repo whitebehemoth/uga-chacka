@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using System.Text;
+using System.IO.Compression;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
@@ -140,6 +141,13 @@ namespace uga_chacka
             }
 
             OriginalText.Text = text;
+            ResultText.Document = new FlowDocument
+            {
+                FontFamily = new FontFamily("Segoe UI"),
+                FontSize = 14,
+                PagePadding = new Thickness(6)
+            };
+
             _currentFilePath = dlg.FileName;
             Title = $"Озвучка книг — {Path.GetFileName(dlg.FileName)}";
         }
@@ -156,10 +164,114 @@ namespace uga_chacka
                 if (dlg.ShowDialog() != true) return;
                 _currentFilePath = dlg.FileName;
             }
-            File.WriteAllText(_currentFilePath, OriginalText.Text, Encoding.UTF8);
+            File.WriteAllText(_currentFilePath, GetResultPlainText(), Encoding.UTF8);
         }
 
         private void Exit_Click(object sender, RoutedEventArgs e) => Close();
+
+        private void SaveProject_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new SaveFileDialog
+            {
+                Title = "Сохранить проект",
+                Filter = "Проект (*.zip)|*.zip|Все файлы (*.*)|*.*"
+            };
+            if (dlg.ShowDialog() != true) return;
+
+            CollectSettings();
+
+            var state = new ProjectState
+            {
+                Threshold = _settings.Homograph.Threshold,
+                CurrentLowConfidenceIndex = _lowConfidence.Count > 0 ? _currentHomographIndex : -1
+            };
+
+            using var fileStream = File.Create(dlg.FileName);
+            using var zip = new ZipArchive(fileStream, ZipArchiveMode.Create);
+
+            WriteEntry(zip, "original.txt", OriginalText.Text);
+            WriteEntry(zip, "result.txt", GetResultPlainText());
+            WriteEntry(zip, "homographs.json", JsonSerializer.Serialize(_allHomographs, JsonOptions));
+            WriteEntry(zip, "state.json", JsonSerializer.Serialize(state, JsonOptions));
+            WriteEntry(zip, "result.rtf", GetResultRtfBytes());
+        }
+
+        private void OpenProject_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new OpenFileDialog
+            {
+                Title = "Открыть проект",
+                Filter = "Проект (*.zip)|*.zip|Все файлы (*.*)|*.*"
+            };
+            if (dlg.ShowDialog() != true) return;
+
+            using var zip = ZipFile.OpenRead(dlg.FileName);
+            var original = ReadEntryText(zip, "original.txt") ?? string.Empty;
+            var resultText = ReadEntryText(zip, "result.txt") ?? string.Empty;
+            var homographsJson = ReadEntryText(zip, "homographs.json");
+            var stateJson = ReadEntryText(zip, "state.json");
+
+            var homographs = string.IsNullOrWhiteSpace(homographsJson)
+                ? new List<ResolvedHomograph>()
+                : JsonSerializer.Deserialize<List<ResolvedHomograph>>(homographsJson, JsonOptions) ?? [];
+
+            var state = string.IsNullOrWhiteSpace(stateJson)
+                ? new ProjectState()
+                : JsonSerializer.Deserialize<ProjectState>(stateJson, JsonOptions) ?? new ProjectState();
+
+            OriginalText.Text = original;
+            _allHomographs = homographs;
+            ShowResult(resultText, homographs, state.Threshold > 0 ? state.Threshold : _settings.Homograph.Threshold);
+
+            StatusHomographCount.Text = homographs.Count.ToString();
+            MainTabs.SelectedIndex = 1;
+
+            if (_lowConfidence.Count > 0 && state.CurrentLowConfidenceIndex >= 0)
+            {
+                _currentHomographIndex = Math.Clamp(state.CurrentLowConfidenceIndex, 0, _lowConfidence.Count - 1);
+                NavigateToCurrentHomograph();
+            }
+        }
+
+        private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (!Keyboard.Modifiers.HasFlag(ModifierKeys.Alt)) return;
+
+            var key = e.Key == Key.System ? e.SystemKey : e.Key;
+            if (key is Key.LeftAlt or Key.RightAlt) return;
+
+            switch (key)
+            {
+                case Key.W:
+                    NextHomograph_Click(this, new RoutedEventArgs());
+                    e.Handled = true;
+                    break;
+                case Key.S:
+                    PrevHomograph_Click(this, new RoutedEventArgs());
+                    e.Handled = true;
+                    break;
+                case Key.D1:
+                case Key.NumPad1:
+                    ApplyVariant(1);
+                    e.Handled = true;
+                    break;
+                case Key.D2:
+                case Key.NumPad2:
+                    ApplyVariant(2);
+                    e.Handled = true;
+                    break;
+                case Key.D3:
+                case Key.NumPad3:
+                    ApplyVariant(3);
+                    e.Handled = true;
+                    break;
+                case Key.D4:
+                case Key.NumPad4:
+                    ApplyVariant(4);
+                    e.Handled = true;
+                    break;
+            }
+        }
 
         // ── Homograph resolution ─────────────────────────────────────────────
 
@@ -234,6 +346,7 @@ namespace uga_chacka
             _lowConfidence.Clear();
             _currentHomographIndex = -1;
             _highlightedRun = null;
+            ManualEditWarning.Visibility = Visibility.Collapsed;
 
             int lastPos = 0;
             foreach (var h in homographs)
@@ -313,11 +426,15 @@ namespace uga_chacka
             run.BringIntoView();
 
             HomographIndexText.Text = $"({_currentHomographIndex + 1}/{_lowConfidence.Count})";
-
+            if (!h.Variants.Any(v=>v.Target == HomographIndexText.Text))
+            {
+                ManualEditWarning.Visibility = Visibility.Visible;
+            }
             var variants = string.Join(" | ", h.Variants.Select(v =>
                 $"{v.Index}. {v.Target}" +
-                (v.LemmatDef is { Count: > 0 } ? $" ({string.Join(", ", v.LemmatDef)})" : "")));
-            StatusCurrentHomograph.Text = $"[{h.Confidence * 100:P0}] {h.OriginalWord}: {variants} ({h.Reasoning})";
+                (v.LemmatDef.Count > 0 ? $" ({string.Join(", ", v.LemmatDef)})" : "")));
+            var reasoning = string.IsNullOrWhiteSpace(h.Reasoning) ? "" : $" ({h.Reasoning})";
+            StatusCurrentHomograph.Text = $"[{h.Confidence:P0}] {h.OriginalWord}: {variants}{reasoning}";
         }
 
         // ── Font size: Ctrl + Mouse Wheel ────────────────────────────────────
@@ -362,10 +479,111 @@ namespace uga_chacka
 
         // ── Helpers ──────────────────────────────────────────────────────────
 
+        private static readonly JsonSerializerOptions JsonOptions = new()
+        {
+            WriteIndented = true,
+            Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+        };
+
+        private void ApplyVariant(int variantIndex)
+        {
+            if (_lowConfidence.Count == 0 || _currentHomographIndex < 0) return;
+
+            var (homograph, run) = _lowConfidence[_currentHomographIndex];
+            var variant = homograph.Variants.FirstOrDefault(v => v.Index == variantIndex);
+            if (variant == null) return;
+
+            var oldLength = run.Text.Length;
+            run.Text = variant.Target;
+            homograph.StressedWord = variant.Target;
+            homograph.ChosenIndex = variant.Index;
+            homograph.Confidence = 1.0;
+            homograph.Length = variant.Target.Length;
+            
+            var delta = homograph.Length - oldLength;
+            if (delta != 0)
+                UpdateOffsets(homograph.AbsolutePosition, delta);
+
+            if (homograph.Confidence * 100 >= HomographThreshold.Value)
+            {
+                run.Background = Brushes.LightGreen;
+                _lowConfidence.RemoveAt(_currentHomographIndex);
+                _highlightedRun = null;
+
+                if (_lowConfidence.Count == 0)
+                {
+                    PrevHomographBtn.IsEnabled = false;
+                    NextHomographBtn.IsEnabled = false;
+                    HomographIndexText.Text = "";
+                    StatusCurrentHomograph.Text = "";
+                    _currentHomographIndex = -1;
+                    return;
+                }
+
+                if (_currentHomographIndex >= _lowConfidence.Count)
+                    _currentHomographIndex = _lowConfidence.Count - 1;
+            }
+
+            NavigateToCurrentHomograph();
+        }
+
+        private void UpdateOffsets(int fromPosition, int delta)
+        {
+            if (delta == 0) return;
+
+            foreach (var h in _allHomographs)
+            {
+                if (h.AbsolutePosition > fromPosition)
+                    h.AbsolutePosition += delta;
+            }
+        }
+
+        private string GetResultPlainText()
+        {
+            var range = new TextRange(ResultText.Document.ContentStart, ResultText.Document.ContentEnd);
+            return range.Text.TrimEnd('\r', '\n');
+        }
+
+        private byte[] GetResultRtfBytes()
+        {
+            var range = new TextRange(ResultText.Document.ContentStart, ResultText.Document.ContentEnd);
+            using var stream = new MemoryStream();
+            range.Save(stream, DataFormats.Rtf);
+            return stream.ToArray();
+        }
+
+        private static void WriteEntry(ZipArchive zip, string entryName, string content)
+        {
+            var entry = zip.CreateEntry(entryName);
+            using var writer = new StreamWriter(entry.Open(), Encoding.UTF8);
+            writer.Write(content);
+        }
+
+        private static void WriteEntry(ZipArchive zip, string entryName, byte[] content)
+        {
+            var entry = zip.CreateEntry(entryName);
+            using var entryStream = entry.Open();
+            entryStream.Write(content, 0, content.Length);
+        }
+
+        private static string? ReadEntryText(ZipArchive zip, string entryName)
+        {
+            var entry = zip.GetEntry(entryName);
+            if (entry == null) return null;
+            using var reader = new StreamReader(entry.Open(), Encoding.UTF8);
+            return reader.ReadToEnd();
+        }
+
         private static string ResolvePath(string path)
         {
             if (Path.IsPathRooted(path)) return path;
             return Path.Combine(AppContext.BaseDirectory, path);
+        }
+
+        private class ProjectState
+        {
+            public double Threshold { get; set; }
+            public int CurrentLowConfidenceIndex { get; set; } = -1;
         }
     }
 }
