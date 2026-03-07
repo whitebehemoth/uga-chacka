@@ -12,10 +12,14 @@
     <Window.CommandBindings>
         <CommandBinding Command="ApplicationCommands.Open" Executed="Open_Click"/>
         <CommandBinding Command="ApplicationCommands.Save" Executed="Save_Click"/>
+        <CommandBinding Command="ApplicationCommands.Find" Executed="Find_Executed"/>
+        <CommandBinding Command="ApplicationCommands.Replace" Executed="Replace_Executed"/>
     </Window.CommandBindings>
     <Window.InputBindings>
         <KeyBinding Key="O" Modifiers="Control" Command="ApplicationCommands.Open"/>
         <KeyBinding Key="S" Modifiers="Control" Command="ApplicationCommands.Save"/>
+        <KeyBinding Key="F" Modifiers="Control" Command="ApplicationCommands.Find"/>
+        <KeyBinding Key="H" Modifiers="Control" Command="ApplicationCommands.Replace"/>
     </Window.InputBindings>
 
     <DockPanel>
@@ -36,10 +40,10 @@
             </MenuItem>
             <MenuItem Header="_Действие">
                 <MenuItem Header="Разрешить омографы" Click="ResolveHomographs_Click"/>
-                <MenuItem Header="Расставить ударения"/>
+                <MenuItem Header="Расставить ударения" Click="ApplyStress_Click"/>
                 <Separator/>
-                <MenuItem Header="Поиск"  InputGestureText="Ctrl+F"/>
-                <MenuItem Header="Замена" InputGestureText="Ctrl+H"/>
+                <MenuItem Header="Поиск"  InputGestureText="Ctrl+F" Click="Search_Click"/>
+                <MenuItem Header="Замена" InputGestureText="Ctrl+H" Click="Replace_Click"/>
                 <Separator/>
                 <MenuItem Header="Озвучить"/>
             </MenuItem>
@@ -104,8 +108,8 @@
                             <Separator/>
                             <TextBlock x:Name="HomographIndexText"
                                        VerticalAlignment="Center"
-                                       Margin="8,0"
-                                       MinWidth="80"
+                                       Margin="2,0"
+                                       MinWidth="30"
                                        TextAlignment="Center"/>
                             <Separator/>
                             <Button x:Name="NextHomographBtn"
@@ -121,6 +125,16 @@
                                        Visibility="Collapsed"
                                        Text="Омографы были модифицированы вручную, навигация может сбоить"/>
                         </ToolBar>
+                        
+                        <ToolBar x:Name="FindReplaceToolBar">
+                            
+                            <TextBox x:Name="FindTextBox" Width="180" Margin="0,0,6,0" KeyDown="FindTextBox_KeyDown"/>
+                            <Button Content="Найти" Padding="5,2" Margin="0,0,8,0" Click="FindNext_Click"/>
+                            <Separator/>
+                            <TextBox x:Name="ReplaceTextBox" Width="180" Margin="0,0,6,0" KeyDown="ReplaceTextBox_KeyDown"/>
+                            <Button Content="Заменить" Padding="5,2" Click="ReplaceNext_Click"/>
+                        </ToolBar>
+                        
                     </ToolBarTray>
                     <RichTextBox x:Name="ResultText"
                                  Grid.Row="1"

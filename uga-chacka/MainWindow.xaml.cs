@@ -1,7 +1,9 @@
-﻿using System.IO;
+﻿using System.Buffers;
+using System.IO;
 using System.Text;
 using System.IO.Compression;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
@@ -25,6 +27,9 @@ namespace uga_chacka
 
         private static readonly string SettingsPath = Path.Combine(
             AppContext.BaseDirectory, "appsettings.json");
+
+        private static readonly Regex WordRegex = new("[а-яА-ЯёЁ]+", RegexOptions.Compiled);
+        private static readonly Regex SentenceEndRegex = new("[.!?…]+", RegexOptions.Compiled);
 
         public MainWindow()
         {
@@ -113,7 +118,7 @@ namespace uga_chacka
                 OpenFile(Encoding.GetEncoding(cp));
         }
 
-        private void OpenFile(Encoding? forced)
+        private async void OpenFile(Encoding? forced)
         {
             var dlg = new OpenFileDialog
             {
@@ -148,6 +153,8 @@ namespace uga_chacka
 
             _currentFilePath = dlg.FileName;
             Title = $"Озвучка книг — {Path.GetFileName(dlg.FileName)}";
+
+            await UpdateStatisticsAsync(text);
         }
 
         private void Save_Click(object sender, ExecutedRoutedEventArgs e)
@@ -222,6 +229,7 @@ namespace uga_chacka
             ShowResult(resultText, homographs, state.Threshold > 0 ? state.Threshold : _settings.Homograph.Threshold);
 
             StatusHomographCount.Text = homographs.Count.ToString();
+            UpdateBasicStatistics(original);
             MainTabs.SelectedIndex = 1;
 
             if (_lowConfidence.Count > 0 && state.CurrentLowConfidenceIndex >= 0)
@@ -269,6 +277,291 @@ namespace uga_chacka
                     e.Handled = true;
                     break;
             }
+        }
+
+        // ── Search & replace ───────────────────────────────────────────────
+
+        private void Find_Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+            Search_Click(sender, e);
+        }
+
+        private void Replace_Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+            Replace_Click(sender, e);
+        }
+
+        private void Search_Click(object sender, RoutedEventArgs e)
+        {
+            var findBox = GetFindTextBox();
+            if (findBox == null) return;
+            findBox.Focus();
+            findBox.SelectAll();
+        }
+
+        private void Replace_Click(object sender, RoutedEventArgs e)
+        {
+            var replaceBox = GetReplaceTextBox();
+            if (replaceBox == null) return;
+            replaceBox.Focus();
+            replaceBox.SelectAll();
+        }
+
+        private void FindTextBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key != Key.Enter) return;
+            e.Handled = true;
+            FindNext_Click(sender, e);
+        }
+
+        private void ReplaceTextBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key != Key.Enter) return;
+            e.Handled = true;
+            ReplaceNext_Click(sender, e);
+        }
+
+        private TextBox? GetFindTextBox()
+        {
+            return FindReplaceToolBar.FindName("FindTextBox") as TextBox;
+        }
+
+        private TextBox? GetReplaceTextBox()
+        {
+            return FindReplaceToolBar.FindName("ReplaceTextBox") as TextBox;
+        }
+
+        private void FindNext_Click(object sender, RoutedEventArgs e)
+        {
+            var findBox = GetFindTextBox();
+            if (findBox == null) return;
+
+            var pattern = findBox.Text;
+            if (string.IsNullOrEmpty(pattern)) return;
+
+            if (!TryFindNextFromCursor(pattern, out var matchIndex))
+            {
+                MessageBox.Show("Совпадения не найдены.", "Поиск",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            SelectInResultText(matchIndex, pattern.Length);
+        }
+
+        private void ReplaceNext_Click(object sender, RoutedEventArgs e)
+        {
+            var findBox = GetFindTextBox();
+            var replaceBox = GetReplaceTextBox();
+            if (findBox == null || replaceBox == null) return;
+
+            var pattern = findBox.Text;
+            if (string.IsNullOrEmpty(pattern)) return;
+
+            var replacement = replaceBox.Text;
+            if (TryGetResultSelection(out var selectionStart, out var selectionLength, out var selectedText)
+                && selectionLength > 0
+                && selectedText == pattern)
+            {
+                ReplaceSelection(selectionStart, selectionLength, replacement, true);
+                SelectInResultText(selectionStart, replacement.Length);
+                return;
+            }
+
+            if (!TryFindNextFromCursor(pattern, out var matchIndex))
+            {
+                MessageBox.Show("Совпадения не найдены.", "Замена",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            ReplaceSelection(matchIndex, pattern.Length, replacement, true);
+            SelectInResultText(matchIndex, replacement.Length);
+        }
+
+        private bool TryFindNextFromCursor(string pattern, out int matchIndex)
+        {
+            var text = GetResultSearchText();
+            matchIndex = -1;
+            if (string.IsNullOrEmpty(text)) return false;
+
+            int startIndex = GetResultCursorIndex();
+            int index = text.IndexOf(pattern, startIndex, StringComparison.CurrentCulture);
+            if (index < 0) return false;
+
+            matchIndex = index;
+            return true;
+        }
+
+        private (string Text, bool IsResult) GetActiveText()
+        {
+            bool isResult = MainTabs.SelectedIndex == 1;
+            string text = isResult ? GetResultPlainText() : OriginalText.Text;
+            return (text, isResult);
+        }
+
+        private string GetResultSearchText()
+        {
+            var range = new TextRange(ResultText.Document.ContentStart, ResultText.Document.ContentEnd);
+            return range.Text;
+        }
+
+        private int GetResultCursorIndex()
+        {
+            var range = new TextRange(ResultText.Document.ContentStart, ResultText.CaretPosition);
+            return range.Text.Length;
+        }
+
+        private void SelectInResultText(int index, int length)
+        {
+            var start = GetTextPointerAtOffset(ResultText.Document.ContentStart, index);
+            var end = GetTextPointerAtOffset(ResultText.Document.ContentStart, index + length);
+            ResultText.Selection.Select(start, end);
+            ResultText.Focus();
+            ResultText.Selection.Start.Paragraph?.BringIntoView();
+        }
+
+        private bool TryGetResultSelection(out int start, out int length, out string selectedText)
+        {
+            var selection = ResultText.Selection;
+            selectedText = selection.Text;
+            start = new TextRange(ResultText.Document.ContentStart, selection.Start).Text.Length;
+            length = selection.Text.Length;
+            return true;
+        }
+
+        private void SetActiveText(string text, bool isResult)
+        {
+            if (isResult)
+            {
+                SetResultPlainText(text);
+                MarkResultManualEdit();
+            }
+            else
+            {
+                OriginalText.Text = text;
+                UpdateBasicStatistics(text);
+            }
+        }
+
+
+        private void ReplaceSelection(int start, int length, string replacement, bool isResult)
+        {
+            if (!isResult)
+            {
+                var text = OriginalText.Text;
+                var updated = text.Remove(start, length).Insert(start, replacement);
+                OriginalText.Text = updated;
+                OriginalText.Select(start, replacement.Length);
+                UpdateBasicStatistics(updated);
+                return;
+            }
+
+            var rangeStart = GetTextPointerAtOffset(ResultText.Document.ContentStart, start);
+            var rangeEnd = GetTextPointerAtOffset(ResultText.Document.ContentStart, start + length);
+            ResultText.Selection.Select(rangeStart, rangeEnd);
+            ResultText.Selection.Text = replacement;
+            MarkResultManualEdit();
+        }
+
+        private static TextPointer GetTextPointerAtOffset(TextPointer start, int offset)
+        {
+            int count = 0;
+            var navigator = start;
+            while (navigator != null)
+            {
+                var context = navigator.GetPointerContext(LogicalDirection.Forward);
+                if (context == TextPointerContext.Text)
+                {
+                    var textRun = navigator.GetTextInRun(LogicalDirection.Forward);
+                    if (count + textRun.Length >= offset)
+                        return navigator.GetPositionAtOffset(offset - count) ?? navigator;
+
+                    count += textRun.Length;
+                    navigator = navigator.GetPositionAtOffset(textRun.Length);
+                }
+                else if (context == TextPointerContext.ElementEnd && navigator.Parent is Paragraph)
+                {
+                    int newlineLength = Environment.NewLine.Length;
+                    if (count + newlineLength >= offset)
+                        return navigator.GetNextInsertionPosition(LogicalDirection.Forward) ?? navigator;
+
+                    count += newlineLength;
+                    navigator = navigator.GetNextContextPosition(LogicalDirection.Forward);
+                }
+                else
+                {
+                    navigator = navigator.GetNextContextPosition(LogicalDirection.Forward);
+                }
+            }
+
+            return start;
+        }
+
+        private void SetResultPlainText(string text)
+        {
+            _suppressResultTextChanged = true;
+            var doc = new FlowDocument
+            {
+                FontFamily = new FontFamily("Segoe UI"),
+                FontSize = 14,
+                PagePadding = new Thickness(6)
+            };
+            doc.Blocks.Add(new Paragraph(new Run(text)));
+            ResultText.Document = doc;
+            _suppressResultTextChanged = false;
+        }
+
+        private void MarkResultManualEdit()
+        {
+            ResetHomographState();
+            ManualEditWarning.Visibility = Visibility.Visible;
+        }
+
+        // ── Accent dictionaries ─────────────────────────────────────────────
+
+        private void ApplyStress_Click(object sender, RoutedEventArgs e)
+        {
+            var (text, isResult) = GetActiveText();
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                MessageBox.Show("Нет текста для обработки.", "Внимание",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            CollectSettings();
+            if (_settings.Homograph.DicAPath.Count == 0)
+            {
+                MessageBox.Show("Не задан путь к словарям ударений.", "Внимание",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            var wordSet = new HashSet<string>(
+                WordRegex.Matches(text).Select(m => m.Value.ToLowerInvariant()));
+
+            var stressMap = new Dictionary<string, StressEntry>(StringComparer.OrdinalIgnoreCase);
+            foreach (var rawPath in _settings.Homograph.DicAPath)
+            {
+                var path = ResolvePath(rawPath);
+                if (!File.Exists(path))
+                    continue;
+
+                foreach (var (word, entry) in LoadStressEntries(path, wordSet))
+                    if (!stressMap.ContainsKey(word))
+                        stressMap[word] = entry;
+            }
+
+            if (stressMap.Count == 0)
+            {
+                MessageBox.Show("Нет совпадений в словарях ударений.", "Внимание",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var updated = ApplyStressMarks(text, stressMap);
+            SetActiveText(updated, isResult);
         }
 
         // ── Homograph resolution ─────────────────────────────────────────────
@@ -478,6 +771,185 @@ namespace uga_chacka
             if (dlg.ShowDialog() == true) DicAPath.Text += (Environment.NewLine + dlg.FileName);
         }
 
+        // ── Statistics ──────────────────────────────────────────────────────
+
+        private void UpdateBasicStatistics(string text)
+        {
+            StatusWords.Text = WordRegex.Matches(text).Count.ToString();
+            StatusSentences.Text = CountSentences(text).ToString();
+        }
+
+        private async Task UpdateStatisticsAsync(string text)
+        {
+            UpdateBasicStatistics(text);
+
+            try
+            {
+                CollectSettings();
+                var dicPath = ResolvePath(_settings.Homograph.DictionaryPath);
+                if (!File.Exists(dicPath))
+                {
+                    StatusHomographCount.Text = "0";
+                    return;
+                }
+
+                var dictionary = await HomographDictionary.LoadAsync(dicPath);
+                int count = 0;
+                foreach (Match match in WordRegex.Matches(text))
+                {
+                    if (dictionary.TryGetVariants(match.Value.ToLowerInvariant(), out _))
+                        count++;
+                }
+
+                StatusHomographCount.Text = count.ToString();
+            }
+            catch
+            {
+                StatusHomographCount.Text = "0";
+            }
+        }
+
+        private static int CountSentences(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return 0;
+
+            int count = 0;
+            foreach (Match m in SentenceEndRegex.Matches(text))
+            {
+                int end = m.Index + m.Length;
+                if (end >= text.Length || char.IsWhiteSpace(text[end]))
+                    count++;
+            }
+
+            return count == 0 ? 1 : count;
+        }
+
+        private readonly record struct StressEntry(int StressPos, int? StressPos2);
+
+        private static IEnumerable<KeyValuePair<string, StressEntry>> LoadStressEntries(
+            string path, HashSet<string> words)
+        {
+            var results = new List<KeyValuePair<string, StressEntry>>();
+            var buffer = ArrayPool<byte>.Shared.Rent(16 * 1024);
+            var state = new JsonReaderState();
+            int bytesInBuffer = 0;
+            bool isFinalBlock = false;
+
+            try
+            {
+                using var stream = File.OpenRead(path);
+                while (!isFinalBlock)
+                {
+                    int bytesRead = stream.Read(buffer, bytesInBuffer, buffer.Length - bytesInBuffer);
+                    if (bytesRead == 0)
+                        isFinalBlock = true;
+
+                    bytesInBuffer += bytesRead;
+                    var reader = new Utf8JsonReader(new ReadOnlySpan<byte>(buffer, 0, bytesInBuffer), isFinalBlock, state);
+
+                    while (reader.Read())
+                    {
+                        if (reader.TokenType != JsonTokenType.PropertyName)
+                            continue;
+
+                        var word = reader.GetString();
+                        if (!reader.Read())
+                            break;
+
+                        if (word != null && words.Contains(word))
+                        {
+                            if (!TryReadStressEntry(ref reader, out var entry))
+                                break;
+                            if (entry.StressPos > 0)
+                                results.Add(new KeyValuePair<string, StressEntry>(word, entry));
+                        }
+                        else
+                        {
+                            if (!reader.TrySkip())
+                                break;
+                        }
+                    }
+
+                    state = reader.CurrentState;
+                    int consumed = (int)reader.BytesConsumed;
+                    bytesInBuffer -= consumed;
+                    if (bytesInBuffer > 0)
+                        Buffer.BlockCopy(buffer, consumed, buffer, 0, bytesInBuffer);
+                }
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(buffer);
+            }
+
+            return results;
+        }
+
+        private static bool TryReadStressEntry(ref Utf8JsonReader reader, out StressEntry entry)
+        {
+            entry = default;
+            if (reader.TokenType != JsonTokenType.StartObject)
+                return true;
+
+            int stressPos = 0;
+            int? stressPos2 = null;
+
+            while (reader.Read())
+            {
+                if (reader.TokenType == JsonTokenType.EndObject)
+                {
+                    if (stressPos > 0)
+                        entry = new StressEntry(stressPos, stressPos2);
+                    return true;
+                }
+
+                if (reader.TokenType != JsonTokenType.PropertyName)
+                    continue;
+
+                var property = reader.GetString();
+                if (!reader.Read())
+                    return false;
+
+                if (property == "stress_pos" && reader.TokenType == JsonTokenType.Number && reader.TryGetInt32(out var stressValue))
+                    stressPos = stressValue;
+                else if (property == "stress_pos2" && reader.TokenType == JsonTokenType.Number && reader.TryGetInt32(out var stressValue2))
+                    stressPos2 = stressValue2;
+                else if (reader.TokenType is JsonTokenType.StartObject or JsonTokenType.StartArray)
+                {
+                    if (!reader.TrySkip())
+                        return false;
+                }
+            }
+
+            return false;
+        }
+
+        private static string ApplyStressMarks(string text, Dictionary<string, StressEntry> stressMap)
+        {
+            var matches = WordRegex.Matches(text);
+            if (matches.Count == 0) return text;
+
+            var sb = new StringBuilder(text);
+            for (int i = matches.Count - 1; i >= 0; i--)
+            {
+                var match = matches[i];
+                if (match.Value.Contains('+'))
+                    continue;
+
+                var key = match.Value.ToLowerInvariant();
+                if (!stressMap.TryGetValue(key, out var entry))
+                    continue;
+
+                int pos = entry.StressPos;
+                if (pos <= 0 || pos > match.Value.Length)
+                    continue;
+
+                sb.Insert(match.Index + pos - 1, "+");
+            }
+
+            return sb.ToString();
+        }
+
 
         // ── Helpers ──────────────────────────────────────────────────────────
 
@@ -548,7 +1020,7 @@ namespace uga_chacka
 
         private byte[] GetResultRtfBytes()
         {
-            var range = new TextRange(ResultText.Document.ContentStart, ResultText.Document.ContentEnd);
+            var range = new TextRange(ResultText.Document .ContentStart, ResultText.Document.ContentEnd);
             using var stream = new MemoryStream();
             range.Save(stream, DataFormats.Rtf);
             return stream.ToArray();
