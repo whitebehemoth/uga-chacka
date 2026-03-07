@@ -21,8 +21,7 @@ public class HomographConfig
 {
     public double Threshold { get; set; } = 70;
     public string DictionaryPath { get; set; } = @"HomographResolver\dic.json";
-    public string DicAPath { get; set; } = @"HomographResolver\dic-a.json";
-    public string DicA2Path { get; set; } = @"HomographResolver\dic-a2.json";
+    public List<string> DicAPath { get; set; } = [];
 }
 
 public class GeneralConfig

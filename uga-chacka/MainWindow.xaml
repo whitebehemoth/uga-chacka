@@ -35,9 +35,7 @@
                 <MenuItem Header="_Выход" Click="Exit_Click"/>
             </MenuItem>
             <MenuItem Header="_Действие">
-                <MenuItem Header="Анализ текста"/>
                 <MenuItem Header="Разрешить омографы" Click="ResolveHomographs_Click"/>
-                <MenuItem Header="Проверить омографы"/>
                 <MenuItem Header="Расставить ударения"/>
                 <Separator/>
                 <MenuItem Header="Поиск"  InputGestureText="Ctrl+F"/>
@@ -216,16 +214,12 @@
                                     <Button DockPanel.Dock="Right" Content="…" Width="32" Margin="4,0,0,0" Click="BrowseDic_Click"/>
                                     <TextBox x:Name="DicPath" Text="HomographResolver\dic.json"/>
                                 </DockPanel>
-                                <TextBlock Text="Словарь ударений 1 (dic-a.json)" Margin="0,0,0,4"/>
+                                <TextBlock Text="Словари ударений" Margin="0,0,0,4"/>
                                 <DockPanel Margin="0,0,0,8">
                                     <Button DockPanel.Dock="Right" Content="…" Width="32" Margin="4,0,0,0" Click="BrowseDicA_Click"/>
-                                    <TextBox x:Name="DicAPath" Text="HomographResolver\dic-a.json"/>
+                                    <TextBox x:Name="DicAPath" Text="" Height="64" AcceptsReturn="True"/>
                                 </DockPanel>
-                                <TextBlock Text="Словарь ударений 2 (dic-a2.json)" Margin="0,0,0,4"/>
-                                <DockPanel Margin="0,0,0,20">
-                                    <Button DockPanel.Dock="Right" Content="…" Width="32" Margin="4,0,0,0" Click="BrowseDicA2_Click"/>
-                                    <TextBox x:Name="DicA2Path" Text="HomographResolver\dic-a2.json"/>
-                                </DockPanel>
+                                
                                 <Button Content="Сохранить" HorizontalAlignment="Left" Padding="20,4" Click="SaveSettings_Click"/>
                             </StackPanel>
                         </ScrollViewer>

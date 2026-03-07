@@ -50,8 +50,7 @@ namespace uga_chacka
 
             HomographThreshold.Value = _settings.Homograph.Threshold;
             DicPath.Text = _settings.Homograph.DictionaryPath;
-            DicAPath.Text = _settings.Homograph.DicAPath;
-            DicA2Path.Text = _settings.Homograph.DicA2Path;
+            DicAPath.Text = string.Join(Environment.NewLine, _settings.Homograph.DicAPath);
 
             DefaultFontSize.Value = _settings.General.DefaultFontSize;
         }
@@ -71,9 +70,7 @@ namespace uga_chacka
 
             _settings.Homograph.Threshold = HomographThreshold.Value;
             _settings.Homograph.DictionaryPath = DicPath.Text;
-            _settings.Homograph.DicAPath = DicAPath.Text;
-            _settings.Homograph.DicA2Path = DicA2Path.Text;
-
+            _settings.Homograph.DicAPath = DicAPath.Text.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries).ToList();
             _settings.General.DefaultFontSize = DefaultFontSize.Value;
         }
 
@@ -477,15 +474,10 @@ namespace uga_chacka
 
         private void BrowseDicA_Click(object sender, RoutedEventArgs e)
         {
-            var dlg = new OpenFileDialog { Title = "Выбрать словарь ударений 1", Filter = "JSON (*.json)|*.json" };
-            if (dlg.ShowDialog() == true) DicAPath.Text = dlg.FileName;
+            var dlg = new OpenFileDialog { Title = "Выбрать словарь ударений", Filter = "JSON (*.json)|*.json" };
+            if (dlg.ShowDialog() == true) DicAPath.Text += (Environment.NewLine + dlg.FileName);
         }
 
-        private void BrowseDicA2_Click(object sender, RoutedEventArgs e)
-        {
-            var dlg = new OpenFileDialog { Title = "Выбрать словарь ударений 2", Filter = "JSON (*.json)|*.json" };
-            if (dlg.ShowDialog() == true) DicA2Path.Text = dlg.FileName;
-        }
 
         // ── Helpers ──────────────────────────────────────────────────────────
 
