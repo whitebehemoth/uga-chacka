@@ -17,6 +17,7 @@ namespace uga_chacka
 {
     public partial class MainWindow : Window
     {
+        private readonly ILlmClientFactory _llmClientFactory;
         private string? _currentFilePath;
         private AppSettings _settings = new();
         private List<ResolvedHomograph> _allHomographs = [];
@@ -31,8 +32,9 @@ namespace uga_chacka
         private static readonly Regex WordRegex = new("[а-яА-ЯёЁ]+", RegexOptions.Compiled);
         private static readonly Regex SentenceEndRegex = new("[.!?…]+", RegexOptions.Compiled);
 
-        public MainWindow()
+        public MainWindow(ILlmClientFactory llmClientFactory)
         {
+            _llmClientFactory = llmClientFactory;
             InitializeComponent();
             LoadSettings();
         }
@@ -594,7 +596,7 @@ namespace uga_chacka
                 var dictionary = await HomographDictionary.LoadAsync(dicPath);
                 StatusCurrentHomograph.Text = $"Словарь: {dictionary.Count} слов. Разрешение…";
 
-                using var llmClient = new LlmClient(_settings.Llm);
+                var llmClient = _llmClientFactory.CreateClient();
 
                 var progress = new Progress<(int Current, int Total)>(p =>
                     StatusCurrentHomograph.Text = $"Омографы: {p.Current}/{p.Total}…");

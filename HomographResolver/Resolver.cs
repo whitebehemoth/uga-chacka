@@ -14,7 +14,7 @@ public static partial class Resolver
     public static async Task<(string ResultText, List<ResolvedHomograph> Homographs)> ResolveAsync(
         string text,
         HomographDictionary dictionary,
-        LlmClient llmClient,
+        ILlmClient llmClient,
         IProgress<(int Current, int Total)>? progress = null,
         CancellationToken ct = default)
     {
