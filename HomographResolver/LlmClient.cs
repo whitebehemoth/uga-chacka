@@ -44,7 +44,7 @@ public sealed class OpenAiLlmClient : ILlmClient, IDisposable
             if (!string.IsNullOrEmpty(settings.ApiKey))
                 message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", settings.ApiKey);
 
-            var response = await _http.SendAsync(message, ct);
+            using var response = await _http.SendAsync(message, ct);
             var text = await response.Content.ReadAsStringAsync();
             response.EnsureSuccessStatusCode();
             json = await response.Content.ReadFromJsonAsync<JsonElement>(ct);

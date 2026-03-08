@@ -14,7 +14,7 @@ namespace uga_chacka
         protected override void OnStartup(StartupEventArgs e)
         {
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-            Services = ConfigureServices();
+            Services ??= ConfigureServices();
 
             var mainWindow = Services.GetRequiredService<MainWindow>();
             mainWindow.Show();
@@ -37,7 +37,7 @@ namespace uga_chacka
             .AddUserSecrets<App>(optional: true)
             .Build();
 
-        private static IServiceProvider ConfigureServices()
+        private static ServiceProvider ConfigureServices()
         {
             var services = new ServiceCollection();
 
