@@ -12,6 +12,7 @@ using System.Windows.Media;
 using HomographResolver;
 using Microsoft.Win32;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace uga_chacka
 {
@@ -19,7 +20,7 @@ namespace uga_chacka
     {
         private readonly ILlmClientFactory _llmClientFactory;
         private string? _currentFilePath;
-        private AppSettings _settings = new();
+        private readonly AppSettings _settings;
         private List<ResolvedHomograph> _allHomographs = [];
         private List<(ResolvedHomograph Homograph, Run Run)> _lowConfidence = [];
         private int _currentHomographIndex = -1;
@@ -34,81 +35,27 @@ namespace uga_chacka
         private static readonly Regex WordRegex = new("[а-яА-ЯёЁ]+", RegexOptions.Compiled);
         private static readonly Regex SentenceEndRegex = new("[.!?…]+", RegexOptions.Compiled);
 
-        public MainWindow(ILlmClientFactory llmClientFactory)
+        public MainWindow(ILlmClientFactory llmClientFactory, IOptionsMonitor<AppSettings> optionsMonitor)
         {
             _llmClientFactory = llmClientFactory;
+            _settings = optionsMonitor.CurrentValue;
             InitializeComponent();
-            LoadSettings();
+            DataContext = _settings;
         }
 
-        // ── Settings persistence ─────────────────────────────────────────────
-
-        private void LoadSettings()
+        private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            _settings = App.Configuration.GetSection("AppSettings").Get<AppSettings>() ?? new AppSettings();
-
-            LlmType.SelectedIndex = _settings.Llm.Type == "FoundryLocal" ? 1 : 0;
-            LlmUrl.Text = _settings.Llm.Url;
-            LlmModel.Text = _settings.Llm.Model;
-            LlmFoundryModel.Text = _settings.Llm.FoundryModel;
+            // Set PasswordBox password from settings
             LlmApiKey.Password = _settings.Llm.ApiKey;
-            LlmTemperature.Value = _settings.Llm.Temperature;
-            LlmSystemPrompt.Text = _settings.Llm.SystemPrompt;
 
-            TtsUrl.Text = _settings.Tts.Url;
-            TtsVoicePath.Text = _settings.Tts.VoicePath;
-
-            HomographThreshold.Value = _settings.Homograph.Threshold;
-            DicPath.Text = _settings.Homograph.DictionaryPath;
-            DicAPath.Text = string.Join(Environment.NewLine, _settings.Homograph.DicAPath);
-
-            DefaultFontSize.Value = _settings.General.DefaultFontSize;
-        }
-
-        private void CollectSettings()
-        {
-            _settings.Llm.Type = LlmType.SelectedIndex == 1 ? "FoundryLocal" : "OpenAI";
-            _settings.Llm.Url = LlmUrl.Text;
-            _settings.Llm.FoundryModel = LlmFoundryModel.SelectedItem as string ?? LlmFoundryModel.Text;
-            _settings.Llm.Model = LlmModel.Text;
-            _settings.Llm.ApiKey = LlmApiKey.Password;
-            _settings.Llm.Temperature = LlmTemperature.Value;
-            _settings.Llm.SystemPrompt = LlmSystemPrompt.Text;
-
-            _settings.Tts.Type = "F5 TTS";
-            _settings.Tts.Url = TtsUrl.Text;
-            _settings.Tts.VoicePath = TtsVoicePath.Text;
-
-            _settings.Homograph.Threshold = HomographThreshold.Value;
-            _settings.Homograph.DictionaryPath = DicPath.Text;
-            _settings.Homograph.DicAPath = DicAPath.Text.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries).ToList();
-            _settings.General.DefaultFontSize = DefaultFontSize.Value;
-        }
-
-        private void PersistSettings()
-        {
-            CollectSettings();
-            var json = JsonSerializer.Serialize(_settings, new JsonSerializerOptions
+            // Subscribe to password change
+            LlmApiKey.PasswordChanged += (s, args) =>
             {
-                WriteIndented = true,
-                Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-            });
-            File.WriteAllText(SettingsPath, json);
-        }
-
-        private void SaveSettings_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                PersistSettings();
-                MessageBox.Show("Настройки сохранены.", "Настройки",
-                    MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Ошибка сохранения: {ex.Message}", "Ошибка",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+                if (_settings.Llm.ApiKey != LlmApiKey.Password)
+                {
+                    _settings.Llm.ApiKey = LlmApiKey.Password;
+                }
+            };
         }
 
         // ── File menu ────────────────────────────────────────────────────────
@@ -181,8 +128,6 @@ namespace uga_chacka
                 Filter = "Проект (*.zip)|*.zip|Все файлы (*.*)|*.*"
             };
             if (dlg.ShowDialog() != true) return;
-
-            CollectSettings();
 
             var state = new ProjectState
             {
@@ -529,7 +474,6 @@ namespace uga_chacka
                 return;
             }
 
-            CollectSettings();
             if (_settings.Homograph.DicAPath.Count == 0)
             {
                 MessageBox.Show("Не задан путь к словарям ударений.", "Внимание",
@@ -574,8 +518,6 @@ namespace uga_chacka
                     MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
-
-            CollectSettings();
 
             var dicPath = ResolvePath(_settings.Homograph.DictionaryPath);
             if (!File.Exists(dicPath))
@@ -793,7 +735,6 @@ namespace uga_chacka
 
             try
             {
-                CollectSettings();
                 var dicPath = ResolvePath(_settings.Homograph.DictionaryPath);
                 if (!File.Exists(dicPath))
                 {
@@ -1164,12 +1105,6 @@ namespace uga_chacka
             {
                 IsEnabled = false;
             }
-        }
-
-        private void LlmFoundryModel_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            _settings.Llm.FoundryModel = LlmFoundryModel.SelectedItem?.ToString() ?? "";
-            PersistSettings();
         }
 
         private class ProjectState

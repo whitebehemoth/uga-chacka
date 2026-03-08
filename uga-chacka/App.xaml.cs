@@ -34,15 +34,15 @@ namespace uga_chacka
         public static IConfigurationRoot Configuration { get; } = new ConfigurationBuilder()
             .SetBasePath(AppContext.BaseDirectory)
             .AddJsonFile(AppSettingsPath, optional: true, reloadOnChange: true)
-            .AddUserSecrets<App>(optional: true)
+            //.AddUserSecrets<App>(optional: true)
             .Build();
 
         private static ServiceProvider ConfigureServices()
         {
             var services = new ServiceCollection();
 
-            services.AddOptions<LlmSettings>()
-                .Bind(Configuration.GetSection("AppSettings:Llm"));
+            services.AddOptions<AppSettings>()
+                .Bind(Configuration.GetSection("AppSettings"));
 
             services.AddSingleton<OpenAiLlmClient>();
             services.AddSingleton<FoundryLocalLlmClient>();

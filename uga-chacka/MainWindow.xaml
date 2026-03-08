@@ -7,7 +7,13 @@
         mc:Ignorable="d"
         Title="Озвучка книг" Height="650" Width="1000"
         MinHeight="400" MinWidth="640"
-        PreviewKeyDown="Window_PreviewKeyDown">
+        PreviewKeyDown="Window_PreviewKeyDown"
+        Loaded="Window_Loaded">
+
+    <Window.Resources>
+        <local:TypeToIndexConverter x:Key="TypeToIndexConverter"/>
+        <local:ListToStringConverter x:Key="ListToStringConverter"/>
+    </Window.Resources>
 
     <Window.CommandBindings>
         <CommandBinding Command="ApplicationCommands.Open" Executed="Open_Click"/>
@@ -163,38 +169,41 @@
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
                             <StackPanel Margin="16,12" MaxWidth="480">
                                 <TextBlock Text="Тип подключения" FontWeight="SemiBold" Margin="0,0,0,4"/>
-                                <ComboBox x:Name="LlmType" Margin="0,0,0,12" SelectedIndex="0">
+                                <ComboBox x:Name="LlmType" 
+                                          Margin="0,0,0,12" 
+                                          SelectedIndex="{Binding Llm.Type, Converter={StaticResource TypeToIndexConverter}, Mode=TwoWay}">
                                     <ComboBoxItem Content="OpenAI API"/>
                                     <ComboBoxItem Content="FoundryLocal"/>
                                 </ComboBox>
                                 <TextBlock Text="URL" Margin="0,0,0,4"/>
-                                <TextBox x:Name="LlmUrl" Text="https://api.openai.com/v1" Margin="0,0,0,12"/>
+                                <TextBox x:Name="LlmUrl" Text="{Binding Llm.Url, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
                                 <TextBlock Text="Модель" Margin="0,0,0,4"/>
-                                <TextBox x:Name="LlmModel" Text="gpt-4o-mini" Margin="0,0,0,12"/>
+                                <TextBox x:Name="LlmModel" Text="{Binding Llm.Model, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
                                 <TextBlock Text="Модель для Foundry Local" Margin="0,0,0,4"/>
                                 <ComboBox x:Name="LlmFoundryModel" 
                                           Margin="0,0,0,12"
-                                          DropDownOpened="LlmFoundryModel_DropDownOpened"
-                                          SelectionChanged="LlmFoundryModel_SelectionChanged"/>
+                                          SelectedItem="{Binding Llm.FoundryModel, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          DropDownOpened="LlmFoundryModel_DropDownOpened"/>
                                 <TextBlock Text="API Key" Margin="0,0,0,4"/>
                                 <PasswordBox x:Name="LlmApiKey" Margin="0,0,0,12"/>
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                                     <TextBlock Text="Температура: "/>
-                                    <TextBlock Text="{Binding Value, ElementName=LlmTemperature, StringFormat=F1}"/>
+                                    <TextBlock Text="{Binding Llm.Temperature, StringFormat=F1}"/>
                                 </StackPanel>
                                 <Slider x:Name="LlmTemperature"
-                                        Minimum="0" Maximum="2" Value="0.3"
+                                        Value="{Binding Llm.Temperature, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                        Minimum="0" Maximum="2" 
                                         TickFrequency="0.1" IsSnapToTickEnabled="True"
                                         TickPlacement="BottomRight"
                                         Margin="0,0,0,12"/>
                                 <TextBlock Text="System Prompt" Margin="0,0,0,4"/>
                                 <TextBox x:Name="LlmSystemPrompt"
+                                         Text="{Binding Llm.SystemPrompt, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                          AcceptsReturn="True"
                                          TextWrapping="Wrap"
                                          Height="120"
                                          VerticalScrollBarVisibility="Auto"
                                          Margin="0,0,0,20"/>
-                                <Button Content="Сохранить" HorizontalAlignment="Left" Padding="20,4" Click="SaveSettings_Click"/>
                             </StackPanel>
                         </ScrollViewer>
                     </TabItem>
@@ -208,13 +217,12 @@
                                     <ComboBoxItem Content="F5 TTS"/>
                                 </ComboBox>
                                 <TextBlock Text="URL (F5 TTS API)" Margin="0,0,0,4"/>
-                                <TextBox x:Name="TtsUrl" Text="http://localhost:7860" Margin="0,0,0,12"/>
+                                <TextBox x:Name="TtsUrl" Text="{Binding Tts.Url, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
                                 <TextBlock Text="Референсный аудиофайл (голос)" Margin="0,0,0,4"/>
                                 <DockPanel Margin="0,0,0,20">
                                     <Button DockPanel.Dock="Right" Content="…" Width="32" Margin="4,0,0,0" Click="BrowseVoice_Click"/>
-                                    <TextBox x:Name="TtsVoicePath"/>
+                                    <TextBox x:Name="TtsVoicePath" Text="{Binding Tts.VoicePath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                 </DockPanel>
-                                <Button Content="Сохранить" HorizontalAlignment="Left" Padding="20,4" Click="SaveSettings_Click"/>
                             </StackPanel>
                         </ScrollViewer>
                     </TabItem>
@@ -225,26 +233,25 @@
                             <StackPanel Margin="16,12" MaxWidth="480">
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                                     <TextBlock Text="Порог вероятности: " FontWeight="SemiBold"/>
-                                    <TextBlock Text="{Binding Value, ElementName=HomographThreshold, StringFormat=F0}" FontWeight="SemiBold"/>
+                                    <TextBlock Text="{Binding Homograph.Threshold, StringFormat=F0}" FontWeight="SemiBold"/>
                                     <TextBlock Text="%" FontWeight="SemiBold"/>
                                 </StackPanel>
                                 <Slider x:Name="HomographThreshold"
-                                        Minimum="0" Maximum="100" Value="90"
+                                        Value="{Binding Homograph.Threshold, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                        Minimum="0" Maximum="100"
                                         TickFrequency="1" IsSnapToTickEnabled="True"
                                         TickPlacement="BottomRight"
                                         Margin="0,0,0,20"/>
                                 <TextBlock Text="Словарь омографов (dic.json)" Margin="0,0,0,4"/>
                                 <DockPanel Margin="0,0,0,8">
                                     <Button DockPanel.Dock="Right" Content="…" Width="32" Margin="4,0,0,0" Click="BrowseDic_Click"/>
-                                    <TextBox x:Name="DicPath" Text="HomographResolver\dic.json"/>
+                                    <TextBox x:Name="DicPath" Text="{Binding Homograph.DictionaryPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                 </DockPanel>
                                 <TextBlock Text="Словари ударений" Margin="0,0,0,4"/>
                                 <DockPanel Margin="0,0,0,8">
                                     <Button DockPanel.Dock="Right" Content="…" Width="32" Margin="4,0,0,0" Click="BrowseDicA_Click"/>
-                                    <TextBox x:Name="DicAPath" Text="" Height="64" AcceptsReturn="True"/>
+                                    <TextBox x:Name="DicAPath" Text="{Binding Homograph.DicAPath, Mode=TwoWay, Converter={StaticResource ListToStringConverter}, UpdateSourceTrigger=PropertyChanged}" Height="64" AcceptsReturn="True"/>
                                 </DockPanel>
-                                
-                                <Button Content="Сохранить" HorizontalAlignment="Left" Padding="20,4" Click="SaveSettings_Click"/>
                             </StackPanel>
                         </ScrollViewer>
                     </TabItem>
@@ -255,15 +262,15 @@
                             <StackPanel Margin="16,12" MaxWidth="480">
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                                     <TextBlock Text="Размер шрифта по умолчанию: " FontWeight="SemiBold"/>
-                                    <TextBlock Text="{Binding Value, ElementName=DefaultFontSize, StringFormat=F0}" FontWeight="SemiBold"/>
+                                    <TextBlock Text="{Binding General.DefaultFontSize, StringFormat=F0}" FontWeight="SemiBold"/>
                                     <TextBlock Text=" pt" FontWeight="SemiBold"/>
                                 </StackPanel>
                                 <Slider x:Name="DefaultFontSize"
-                                        Minimum="8" Maximum="36" Value="14"
+                                        Value="{Binding General.DefaultFontSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                        Minimum="8" Maximum="36"
                                         TickFrequency="2" IsSnapToTickEnabled="True"
                                         TickPlacement="BottomRight"
                                         Margin="0,0,0,20"/>
-                                <Button Content="Сохранить" HorizontalAlignment="Left" Padding="20,4" Click="SaveSettings_Click"/>
                             </StackPanel>
                         </ScrollViewer>
                     </TabItem>

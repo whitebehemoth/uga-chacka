@@ -1,3 +1,5 @@
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 
 namespace HomographResolver;
@@ -51,13 +53,54 @@ public class LlmChoice
     public string Reasoning { get; set; } = "";
 }
 
-public class LlmSettings
+public class LlmSettings : INotifyPropertyChanged
 {
-    public string Type { get; set; } = "";
-    public string Url { get; set; } = "";
-    public string Model { get; set; } = "";
-    public string FoundryModel { get; set; } = "";
-    public string ApiKey { get; set; } = "";
-    public double Temperature { get; set; } = 0.3;
-    public string SystemPrompt { get; set; } = "";
+    public string Type
+    {
+        get => field ?? "";
+        set { field = value; OnPropertyChanged(); }
+    }
+
+    public string Url
+    {
+        get => field ?? "";
+        set { field = value; OnPropertyChanged(); }
+    }
+
+    public string Model
+    {
+        get => field ?? "";
+        set { field = value; OnPropertyChanged(); }
+    }
+
+    public string FoundryModel
+    {
+        get => field ?? "";
+        set { field = value; OnPropertyChanged(); }
+    }
+
+    public string ApiKey
+    {
+        get => field ?? "";
+        set { field = value; OnPropertyChanged(); }
+    }
+
+    public double Temperature
+    {
+        get => field;
+        set { field = value; OnPropertyChanged(); }
+    }
+
+    public string SystemPrompt
+    {
+        get => field ?? "";
+        set { field = value; OnPropertyChanged(); }
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    protected void OnPropertyChanged([CallerMemberName] string? name = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+    }
 }
