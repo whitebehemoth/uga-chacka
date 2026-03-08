@@ -26,6 +26,8 @@ namespace uga_chacka
         private Run? _highlightedRun;
         private bool _suppressResultTextChanged;
 
+        private CancellationTokenSource? _resolutionCts;
+
         private static readonly string SettingsPath = Path.Combine(
             AppContext.BaseDirectory, "appsettings.json");
 
@@ -48,6 +50,7 @@ namespace uga_chacka
             LlmType.SelectedIndex = _settings.Llm.Type == "FoundryLocal" ? 1 : 0;
             LlmUrl.Text = _settings.Llm.Url;
             LlmModel.Text = _settings.Llm.Model;
+            LlmFoundryModel.Text = _settings.Llm.FoundryModel;
             LlmApiKey.Password = _settings.Llm.ApiKey;
             LlmTemperature.Value = _settings.Llm.Temperature;
             LlmSystemPrompt.Text = _settings.Llm.SystemPrompt;
@@ -66,6 +69,7 @@ namespace uga_chacka
         {
             _settings.Llm.Type = LlmType.SelectedIndex == 1 ? "FoundryLocal" : "OpenAI";
             _settings.Llm.Url = LlmUrl.Text;
+            _settings.Llm.FoundryModel = LlmFoundryModel.SelectedItem as string ?? LlmFoundryModel.Text;
             _settings.Llm.Model = LlmModel.Text;
             _settings.Llm.ApiKey = LlmApiKey.Password;
             _settings.Llm.Temperature = LlmTemperature.Value;
@@ -111,7 +115,7 @@ namespace uga_chacka
 
         private void Open_Click(object sender, ExecutedRoutedEventArgs e)
         {
-            OpenFile(null);
+            OpenFile(Encoding.UTF8);
         }
 
         private void OpenNonUnicode_Click(object sender, RoutedEventArgs e)
@@ -120,31 +124,24 @@ namespace uga_chacka
                 OpenFile(Encoding.GetEncoding(cp));
         }
 
-        private async void OpenFile(Encoding? forced)
+        private async void OpenFile(Encoding encoding)
         {
             var dlg = new OpenFileDialog
             {
                 Title = "Открыть текстовый файл",
-                Filter = "Текстовые файлы (*.txt)|*.txt|Все файлы (*.*)|*.*"
+                Filter = "Текстовые файлы (*.txt;*.fb2)|*.txt;*.fb2|fb2 файлы (*.fb2)|*.fb2|Все файлы (*.*)|*.*"
             };
             if (dlg.ShowDialog() != true) return;
 
             string text;
-            if (forced != null)
+            text = File.ReadAllText(dlg.FileName, encoding);
+            if (Path.GetExtension(dlg.FileName) == ".fb2")
             {
-                text = File.ReadAllText(dlg.FileName, forced);
+                Fb2.Document.Fb2Document fd = new Fb2.Document.Fb2Document();
+                await fd.LoadAsync(text, new Fb2.Document.LoadingOptions.Fb2LoadingOptions() { });
+                text = string.Join(Environment.NewLine, fd.Bodies);
             }
-            else
-            {
-                text = File.ReadAllText(dlg.FileName, Encoding.UTF8);
-                if (!text.Contains('а'))
-                {
-                    text = File.ReadAllText(dlg.FileName, Encoding.GetEncoding(1251));
-                    if (!text.Contains('а'))
-                        text = File.ReadAllText(dlg.FileName, Encoding.GetEncoding(866));
-                }
-            }
-
+            
             OriginalText.Text = text;
             ResultText.Document = new FlowDocument
             {
@@ -589,6 +586,8 @@ namespace uga_chacka
             }
 
             IsEnabled = false;
+            _resolutionCts = new CancellationTokenSource();
+            UpdateResolutionUI(true);
             StatusCurrentHomograph.Text = "Загрузка словаря…";
 
             try
@@ -602,7 +601,7 @@ namespace uga_chacka
                     StatusCurrentHomograph.Text = $"Омографы: {p.Current}/{p.Total}…");
 
                 var (resultText, homographs) = await Resolver.ResolveAsync(
-                    text, dictionary, llmClient, progress);
+                    text, dictionary, llmClient, progress, _resolutionCts.Token, OnLlmError);
 
                 _allHomographs = homographs;
                 ShowResult(resultText, homographs, _settings.Homograph.Threshold);
@@ -614,6 +613,10 @@ namespace uga_chacka
                     ? $"Низкая уверенность: {_lowConfidence.Count}. Используйте навигацию."
                     : "Все омографы разрешены.";
             }
+            catch (OperationCanceledException)
+            {
+                StatusCurrentHomograph.Text = "Процесс прерван пользователем.";
+            }
             catch (Exception ex)
             {
                 MessageBox.Show($"Ошибка:\n{ex.Message}", "Ошибка",
@@ -623,6 +626,9 @@ namespace uga_chacka
             finally
             {
                 IsEnabled = true;
+                UpdateResolutionUI(false);
+                _resolutionCts?.Dispose();
+                _resolutionCts = null;
             }
         }
 
@@ -721,11 +727,11 @@ namespace uga_chacka
             run.BringIntoView();
 
             HomographIndexText.Text = $"({_currentHomographIndex + 1}/{_lowConfidence.Count})";
-            if (!h.Variants.Any(v=>v.Target == HomographIndexText.Text))
+            if (!h.Variants.Any(v => v.Target == HomographIndexText.Text))
             {
                 ManualEditWarning.Visibility = Visibility.Visible;
             }
-            var variants = string.Join(" | ", h.Variants.Select(v => v.Target ));
+            var variants = string.Join(" | ", h.Variants.Select(v => v.Target));
             var reasoning = string.IsNullOrWhiteSpace(h.Reasoning) ? "" : $" ({h.Reasoning})";
             StatusCurrentHomograph.Text = $"[{h.Confidence:P0}] {h.OriginalWord}: {variants}{reasoning}";
         }
@@ -968,14 +974,14 @@ namespace uga_chacka
             var (homograph, run) = _lowConfidence[_currentHomographIndex];
             if (homograph.Variants.Count < variantIndex) return;
 
-            var variant = homograph.Variants[variantIndex-1];
+            var variant = homograph.Variants[variantIndex - 1];
             var oldLength = run.Text.Length;
             run.Text = variant.Target;
             homograph.StressedWord = variant.Target;
             homograph.ChosenIndex = variant.Index;
             homograph.Confidence = 1.0;
             homograph.Length = variant.Target.Length;
-            
+
             var delta = homograph.Length - oldLength;
             if (delta != 0)
                 UpdateOffsets(homograph.AbsolutePosition, delta);
@@ -1022,7 +1028,7 @@ namespace uga_chacka
 
         private byte[] GetResultRtfBytes()
         {
-            var range = new TextRange(ResultText.Document .ContentStart, ResultText.Document.ContentEnd);
+            var range = new TextRange(ResultText.Document.ContentStart, ResultText.Document.ContentEnd);
             using var stream = new MemoryStream();
             range.Save(stream, DataFormats.Rtf);
             return stream.ToArray();
@@ -1068,6 +1074,102 @@ namespace uga_chacka
             StatusCurrentHomograph.Text = "";
             StatusHomographCount.Text = "0";
             ManualEditWarning.Visibility = Visibility.Collapsed;
+        }
+
+        private void UpdateResolutionUI(bool isProcessing)
+        {
+            if (CancelResolutionBtn != null)
+                CancelResolutionBtn.Visibility = isProcessing ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private void CancelResolutionBtn_Click(object sender, RoutedEventArgs e)
+        {
+            var result = MessageBox.Show(
+                "Остановиться и прервать процесс?",
+                "Подтверждение отмены",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+
+            if (result == MessageBoxResult.Yes)
+            {
+                _resolutionCts?.Cancel();
+                UpdateResolutionUI(false);
+            }
+        }
+
+        private async void LlmFoundryModel_DropDownOpened(object sender, EventArgs e)
+        {
+            if (LlmFoundryModel.Items.Count > 0)
+                return;
+
+            try
+            {
+                var models = await GetFoundryModelsAsync();
+                if (models.Count == 0)
+                {
+                    LlmFoundryModel.Items.Add("FoundryLocal недоступен");
+                }
+                else
+                {
+                    foreach (var model in models)
+                        LlmFoundryModel.Items.Add(model);
+
+                    if (!string.IsNullOrEmpty(_settings.Llm.FoundryModel))
+                        LlmFoundryModel.SelectedItem = _settings.Llm.FoundryModel;
+                    else if (LlmFoundryModel.Items.Count > 0)
+                        LlmFoundryModel.SelectedIndex = 0;
+                }
+            }
+            catch (Exception ex)
+            {
+                LlmFoundryModel.Items.Add($"Ошибка: {ex.Message}");
+            }
+        }
+
+        private async Task<List<string>> GetFoundryModelsAsync()
+        {
+            try
+            {
+                if (!Microsoft.AI.Foundry.Local.FoundryLocalManager.IsInitialized)
+                {
+                    await Microsoft.AI.Foundry.Local.FoundryLocalManager.CreateAsync(
+                        new Microsoft.AI.Foundry.Local.Configuration { AppName = "uga-chacka" },
+                        Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance);
+                }
+
+                var catalog = await Microsoft.AI.Foundry.Local.FoundryLocalManager.Instance.GetCatalogAsync();
+                var models = await catalog.ListModelsAsync();
+                return models.Select(m => m.Id).ToList();
+            }
+            catch
+            {
+                return [];
+            }
+        }
+
+        private async Task<bool> OnLlmError(int current, int total)
+        {
+            IsEnabled = true;
+            try
+            {
+                var result = MessageBox.Show(
+                    $"Ошибка ответа от LLM ({current}/{total}).\n\nЕсли продолжить, будет выбран случайный вариант омографа.\n\nПрервать?",
+                    "Ошибка LLM",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Warning);
+
+                return result == MessageBoxResult.No;
+            }
+            finally
+            {
+                IsEnabled = false;
+            }
+        }
+
+        private void LlmFoundryModel_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            _settings.Llm.FoundryModel = LlmFoundryModel.SelectedItem?.ToString() ?? "";
+            PersistSettings();
         }
 
         private class ProjectState

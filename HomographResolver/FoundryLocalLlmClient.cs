@@ -76,8 +76,11 @@ public sealed class FoundryLocalLlmClient : ILlmClient, IDisposable
 
             var settings = _settings.CurrentValue;
             var catalog = await FoundryLocalManager.Instance.GetCatalogAsync();
-            var model = await catalog.GetModelAsync(settings.Model)
-                        ?? throw new InvalidOperationException($"Модель '{settings.Model}' не найдена в Foundry Local.");
+            var mmm = await catalog.ListModelsAsync();
+            var model = mmm.FirstOrDefault(m => m.Id.Equals(settings.FoundryModel, StringComparison.InvariantCultureIgnoreCase));
+
+            if (model is null)
+                throw new InvalidOperationException($"Модель '{settings.FoundryModel}' не найдена в Foundry Local.");
 
             await model.DownloadAsync();
             await model.LoadAsync();

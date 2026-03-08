@@ -56,7 +56,6 @@
                     <DockPanel LastChildFill="True"/>
                 </ItemsPanelTemplate>
             </StatusBar.ItemsPanel>
-            <!-- right section: current homograph info during navigation -->
             <!-- left section: text analysis statistics -->
             <StatusBarItem Padding="6,0">
                 <StackPanel Orientation="Horizontal">
@@ -66,9 +65,15 @@
                     <TextBlock x:Name="StatusSentences" Text="—"/>
                     <TextBlock Text="   Омографов: " Margin="8,0,0,0"/>
                     <TextBlock x:Name="StatusHomographCount" Text="—"/>
+                    <Button x:Name="CancelResolutionBtn" 
+                            Content="Отмена" 
+                            Click="CancelResolutionBtn_Click"
+                            Padding="8,2" Margin="12,0,0,0"
+                            Visibility="Collapsed"/>
                 </StackPanel>
             </StatusBarItem>
             <Separator />
+            <!-- right section: current homograph info during navigation -->
             <StatusBarItem Padding="6,0">
                 <TextBlock x:Name="StatusCurrentHomograph"/>
             </StatusBarItem>
@@ -166,6 +171,11 @@
                                 <TextBox x:Name="LlmUrl" Text="https://api.openai.com/v1" Margin="0,0,0,12"/>
                                 <TextBlock Text="Модель" Margin="0,0,0,4"/>
                                 <TextBox x:Name="LlmModel" Text="gpt-4o-mini" Margin="0,0,0,12"/>
+                                <TextBlock Text="Модель для Foundry Local" Margin="0,0,0,4"/>
+                                <ComboBox x:Name="LlmFoundryModel" 
+                                          Margin="0,0,0,12"
+                                          DropDownOpened="LlmFoundryModel_DropDownOpened"
+                                          SelectionChanged="LlmFoundryModel_SelectionChanged"/>
                                 <TextBlock Text="API Key" Margin="0,0,0,4"/>
                                 <PasswordBox x:Name="LlmApiKey" Margin="0,0,0,12"/>
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
@@ -173,7 +183,7 @@
                                     <TextBlock Text="{Binding Value, ElementName=LlmTemperature, StringFormat=F1}"/>
                                 </StackPanel>
                                 <Slider x:Name="LlmTemperature"
-                                        Minimum="0" Maximum="2" Value="0.1"
+                                        Minimum="0" Maximum="2" Value="0.3"
                                         TickFrequency="0.1" IsSnapToTickEnabled="True"
                                         TickPlacement="BottomRight"
                                         Margin="0,0,0,12"/>
@@ -219,8 +229,8 @@
                                     <TextBlock Text="%" FontWeight="SemiBold"/>
                                 </StackPanel>
                                 <Slider x:Name="HomographThreshold"
-                                        Minimum="0" Maximum="100" Value="70"
-                                        TickFrequency="5" IsSnapToTickEnabled="True"
+                                        Minimum="0" Maximum="100" Value="90"
+                                        TickFrequency="1" IsSnapToTickEnabled="True"
                                         TickPlacement="BottomRight"
                                         Margin="0,0,0,20"/>
                                 <TextBlock Text="Словарь омографов (dic.json)" Margin="0,0,0,4"/>

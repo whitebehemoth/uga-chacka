@@ -16,7 +16,8 @@ public static partial class Resolver
         HomographDictionary dictionary,
         ILlmClient llmClient,
         IProgress<(int Current, int Total)>? progress = null,
-        CancellationToken ct = default)
+        CancellationToken ct = default,
+        Func<int, int, Task<bool>>? onLlmError = null)
     {
         // Step 1: find every word that appears in the homograph dictionary
         var matches = new List<(int Start, int Length, string Word, List<HomographVariant> Variants)>();
@@ -57,7 +58,18 @@ public static partial class Resolver
             }
             catch
             {
-                choice = new LlmChoice { Index = 0, Confidence = 0.0 };
+                bool shouldContinue = true;
+                if (onLlmError != null)
+                {
+                    shouldContinue = await onLlmError(i + 1, matches.Count);
+                    if (!shouldContinue)
+                        throw new OperationCanceledException("Пользователь отменил обработку после ошибки LLM.");
+                }
+                choice = new LlmChoice 
+                { 
+                    Index = 0, 
+                    Confidence = 0.0 
+                };
             }
 
             var chosen = match.Variants.FirstOrDefault(v => v.Index == choice.Index)

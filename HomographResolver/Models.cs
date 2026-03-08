@@ -53,17 +53,11 @@ public class LlmChoice
 
 public class LlmSettings
 {
-    public string Type { get; set; } = "OpenAI";
-    public string Url { get; set; } = "https://api.openai.com/v1";
-    public string Model { get; set; } = "gpt-4o-mini";
+    public string Type { get; set; } = "";
+    public string Url { get; set; } = "";
+    public string Model { get; set; } = "";
+    public string FoundryModel { get; set; } = "";
     public string ApiKey { get; set; } = "";
-    public double Temperature { get; set; } = 0.1;
-
-    public string SystemPrompt { get; set; } =
-        "Ты — эксперт-лингвист по русскому языку. " +
-        "Тебе предоставляется предложение с омографом и варианты произношения " +
-        "с грамматическими и смысловыми пояснениями.\n\n" +
-        "Выбери правильный вариант ударения на основе контекста предложения.\n" +
-        "Ответь СТРОГО в формате JSON без какого-либо дополнительного текста:\n" +
-        "{\"index\": <номер выбранного варианта>, \"confidence\": <уверенность от 0.0 до 1.0>}";
+    public double Temperature { get; set; } = 0.3;
+    public string SystemPrompt { get; set; } = "";
 }
