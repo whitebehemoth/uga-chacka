@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Linq;
 using System.Text.Json;
 using HomographResolver;
 
@@ -8,24 +9,18 @@ namespace uga_chacka;
 
 public class AppSettings : INotifyPropertyChanged, IDisposable
 {
-    //private LlmSettings _llm = new();
-    //private TtsConfig _tts = new();
-    //private HomographConfig _homograph = new();
-    //private GeneralConfig _general = new();
-
     private Timer? _saveTimer;
     private const int SaveDelayMs = 500; // Debounce: сохранять не чаще чем раз в 500ms
 
     private bool _disposed;
+    private bool _autoSaveEnabled;
 
-    //public AppSettings()
-    //{
-    //    // Subscribe to changes in nested objects
-    //    _llm.PropertyChanged += (s, e) => ScheduleSave();
-    //    _tts.PropertyChanged += (s, e) => ScheduleSave();
-    //    _homograph.PropertyChanged += (s, e) => ScheduleSave();
-    //    _general.PropertyChanged += (s, e) => ScheduleSave();
-    //}
+    private void NestedSettingChanged(object? sender, PropertyChangedEventArgs e) => ScheduleSave();
+
+    public void EnableAutoSave()
+    {
+        _autoSaveEnabled = true;
+    }
 
     public LlmSettings Llm
     {
@@ -35,12 +30,12 @@ public class AppSettings : INotifyPropertyChanged, IDisposable
             if (field != value)
             {
                 if (field != null)
-                    field.PropertyChanged -= (s, e) => ScheduleSave();
+                    field.PropertyChanged -= NestedSettingChanged;
 
                 field = value;
 
                 if (field != null)
-                    field.PropertyChanged += (s, e) => ScheduleSave();
+                    field.PropertyChanged += NestedSettingChanged;
 
                 OnPropertyChanged();
                 ScheduleSave();
@@ -56,12 +51,12 @@ public class AppSettings : INotifyPropertyChanged, IDisposable
             if (field != value)
             {
                 if (field != null)
-                    field.PropertyChanged -= (s, e) => ScheduleSave();
+                    field.PropertyChanged -= NestedSettingChanged;
 
                 field = value;
 
                 if (field != null)
-                    field.PropertyChanged += (s, e) => ScheduleSave();
+                    field.PropertyChanged += NestedSettingChanged;
 
                 OnPropertyChanged();
                 ScheduleSave();
@@ -77,12 +72,12 @@ public class AppSettings : INotifyPropertyChanged, IDisposable
             if (field != value)
             {
                 if (field != null)
-                    field.PropertyChanged -= (s, e) => ScheduleSave();
+                    field.PropertyChanged -= NestedSettingChanged;
 
                 field = value;
 
                 if (field != null)
-                    field.PropertyChanged += (s, e) => ScheduleSave();
+                    field.PropertyChanged += NestedSettingChanged;
 
                 OnPropertyChanged();
                 ScheduleSave();
@@ -98,12 +93,12 @@ public class AppSettings : INotifyPropertyChanged, IDisposable
             if (field != value)
             {
                 if (field != null)
-                    field.PropertyChanged -= (s, e) => ScheduleSave();
+                    field.PropertyChanged -= NestedSettingChanged;
 
                 field = value;
 
                 if (field != null)
-                    field.PropertyChanged += (s, e) => ScheduleSave();
+                    field.PropertyChanged += NestedSettingChanged;
 
                 OnPropertyChanged();
                 ScheduleSave();
@@ -138,6 +133,9 @@ public class AppSettings : INotifyPropertyChanged, IDisposable
 
     private void ScheduleSave()
     {
+        if (!_autoSaveEnabled)
+            return;
+
         // Отмена предыдущего таймера
         _saveTimer?.Dispose();
 
@@ -152,7 +150,7 @@ public class AppSettings : INotifyPropertyChanged, IDisposable
             _saveTimer?.Dispose();
             _saveTimer = null;
 
-            var json = JsonSerializer.Serialize(this, new JsonSerializerOptions
+            var json = JsonSerializer.Serialize(new { AppSettings = this }, new JsonSerializerOptions
             {
                 WriteIndented = true,
                 Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
@@ -172,19 +170,40 @@ public class TtsConfig : INotifyPropertyChanged
     public string Type
     {
         get => field ?? "";
-        set { field = value; OnPropertyChanged(); }
+        set
+        {
+            if (field != value)
+            {
+                field = value;
+                OnPropertyChanged();
+            }
+        }
     }
 
     public string Url
     {
         get => field ?? "";
-        set { field = value; OnPropertyChanged(); }
+        set
+        {
+            if (field != value)
+            {
+                field = value;
+                OnPropertyChanged();
+            }
+        }
     }
 
     public string VoicePath
     {
         get => field ?? "";
-        set { field = value; OnPropertyChanged(); }
+        set
+        {
+            if (field != value)
+            {
+                field = value;
+                OnPropertyChanged();
+            }
+        }
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -200,19 +219,42 @@ public class HomographConfig : INotifyPropertyChanged
     public double Threshold
     {
         get => field;
-        set { field = value; OnPropertyChanged(); }
+        set
+        {
+            if (field != value)
+            {
+                field = value;
+                OnPropertyChanged();
+            }
+        }
     }
 
     public string DictionaryPath
     {
         get => field ?? "";
-        set { field = value; OnPropertyChanged(); }
+        set
+        {
+            if (field != value)
+            {
+                field = value;
+                OnPropertyChanged();
+            }
+        }
     }
 
     public List<string> DicAPath
     {
         get => field ?? [];
-        set { field = value; OnPropertyChanged(); }
+        set
+        {
+            var current = field ?? [];
+            var incoming = value ?? [];
+            if (!current.SequenceEqual(incoming))
+            {
+                field = value;
+                OnPropertyChanged();
+            }
+        }
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -228,7 +270,14 @@ public class GeneralConfig : INotifyPropertyChanged
     public double? DefaultFontSize
     {
         get => field ?? 14;
-        set { field = value; OnPropertyChanged(); }
+        set
+        {
+            if (field != value)
+            {
+                field = value;
+                OnPropertyChanged();
+            }
+        }
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

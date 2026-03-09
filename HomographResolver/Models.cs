@@ -58,43 +58,92 @@ public class LlmSettings : INotifyPropertyChanged
     public string Type
     {
         get => field ?? "";
-        set { field = value; OnPropertyChanged(); }
+        set
+        {
+            if (field != value)
+            {
+                field = value;
+                OnPropertyChanged();
+            }
+        }
     }
 
     public string Url
     {
         get => field ?? "";
-        set { field = value; OnPropertyChanged(); }
+        set
+        {
+            if (field != value)
+            {
+                field = value;
+                OnPropertyChanged();
+            }
+        }
     }
 
     public string Model
     {
         get => field ?? "";
-        set { field = value; OnPropertyChanged(); }
+        set
+        {
+            if (field != value)
+            {
+                field = value;
+                OnPropertyChanged();
+            }
+        }
     }
 
     public string FoundryModel
     {
         get => field ?? "";
-        set { field = value; OnPropertyChanged(); }
+        set
+        {
+            if (field != value)
+            {
+                field = value;
+                OnPropertyChanged();
+            }
+        }
     }
 
     public string ApiKey
     {
         get => field ?? "";
-        set { field = value; OnPropertyChanged(); }
+        set
+        {
+            if (field != value)
+            {
+                field = value;
+                OnPropertyChanged();
+            }
+        }
     }
 
     public double Temperature
     {
         get => field;
-        set { field = value; OnPropertyChanged(); }
+        set
+        {
+            if (field != value)
+            {
+                field = value;
+                OnPropertyChanged();
+            }
+        }
     }
 
     public string SystemPrompt
     {
         get => field ?? "";
-        set { field = value; OnPropertyChanged(); }
+        set
+        {
+            if (field != value)
+            {
+                field = value;
+                OnPropertyChanged();
+            }
+        }
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

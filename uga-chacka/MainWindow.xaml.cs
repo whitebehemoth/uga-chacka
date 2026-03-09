@@ -56,6 +56,8 @@ namespace uga_chacka
                     _settings.Llm.ApiKey = LlmApiKey.Password;
                 }
             };
+
+            _settings.EnableAutoSave();
         }
 
         // ── File menu ────────────────────────────────────────────────────────
