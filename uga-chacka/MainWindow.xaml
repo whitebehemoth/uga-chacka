@@ -51,7 +51,7 @@
                 <MenuItem Header="Поиск"  InputGestureText="Ctrl+F" Click="Search_Click"/>
                 <MenuItem Header="Замена" InputGestureText="Ctrl+H" Click="Replace_Click"/>
                 <Separator/>
-                <MenuItem Header="Озвучить"/>
+                <MenuItem Header="Озвучить" Click="Voiceover_Click"/>
             </MenuItem>
         </Menu>
 
@@ -212,17 +212,41 @@
                     <TabItem Header="TTS">
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
                             <StackPanel Margin="16,12" MaxWidth="480">
-                                <TextBlock Text="TTS движок" FontWeight="SemiBold" Margin="0,0,0,4"/>
-                                <ComboBox x:Name="TtsType" Margin="0,0,0,12" SelectedIndex="0">
-                                    <ComboBoxItem Content="F5 TTS"/>
-                                </ComboBox>
-                                <TextBlock Text="URL (F5 TTS API)" Margin="0,0,0,4"/>
-                                <TextBox x:Name="TtsUrl" Text="{Binding Tts.Url, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
+                                <TextBlock Text="F5-TTS CLI (путь к f5-tts_infer-cli)" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <DockPanel Margin="0,0,0,12">
+                                    <Button DockPanel.Dock="Right" Content="…" Width="32" Margin="4,0,0,0" Click="BrowseF5TtsCli_Click"/>
+                                    <TextBox x:Name="TtsCliPath" Text="{Binding Tts.F5TtsCliPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                </DockPanel>
+                                <TextBlock Text="Конфиг модели (.yaml)" Margin="0,0,0,4"/>
+                                <DockPanel Margin="0,0,0,12">
+                                    <Button DockPanel.Dock="Right" Content="…" Width="32" Margin="4,0,0,0" Click="BrowseModelCfg_Click"/>
+                                    <TextBox x:Name="TtsModelCfg" Text="{Binding Tts.ModelCfg, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                </DockPanel>
+                                <TextBlock Text="Файл весов (.safetensors)" Margin="0,0,0,4"/>
+                                <DockPanel Margin="0,0,0,12">
+                                    <Button DockPanel.Dock="Right" Content="…" Width="32" Margin="4,0,0,0" Click="BrowseCkptFile_Click"/>
+                                    <TextBox x:Name="TtsCkptFile" Text="{Binding Tts.CkptFile, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                </DockPanel>
+                                <TextBlock Text="Файл словаря (vocab.txt)" Margin="0,0,0,4"/>
+                                <DockPanel Margin="0,0,0,12">
+                                    <Button DockPanel.Dock="Right" Content="…" Width="32" Margin="4,0,0,0" Click="BrowseVocabFile_Click"/>
+                                    <TextBox x:Name="TtsVocabFile" Text="{Binding Tts.VocabFile, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                </DockPanel>
                                 <TextBlock Text="Референсный аудиофайл (голос)" Margin="0,0,0,4"/>
-                                <DockPanel Margin="0,0,0,20">
+                                <DockPanel Margin="0,0,0,12">
                                     <Button DockPanel.Dock="Right" Content="…" Width="32" Margin="4,0,0,0" Click="BrowseVoice_Click"/>
                                     <TextBox x:Name="TtsVoicePath" Text="{Binding Tts.VoicePath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                 </DockPanel>
+                                <TextBlock Text="Текст референсного аудио" Margin="0,0,0,4"/>
+                                <TextBox x:Name="TtsRefText"
+                                         Text="{Binding Tts.RefText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         AcceptsReturn="True"
+                                         TextWrapping="Wrap"
+                                         Height="60"
+                                         VerticalScrollBarVisibility="Auto"
+                                         Margin="0,0,0,12"/>
+                                <TextBlock Text="Устройство (cuda / cpu)" Margin="0,0,0,4"/>
+                                <TextBox Text="{Binding Tts.Device, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,20"/>
                             </StackPanel>
                         </ScrollViewer>
                     </TabItem>

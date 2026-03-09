@@ -206,6 +206,84 @@ public class TtsConfig : INotifyPropertyChanged
         }
     }
 
+    public string F5TtsCliPath
+    {
+        get => field ?? "";
+        set
+        {
+            if (field != value)
+            {
+                field = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public string ModelCfg
+    {
+        get => field ?? "";
+        set
+        {
+            if (field != value)
+            {
+                field = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public string CkptFile
+    {
+        get => field ?? "";
+        set
+        {
+            if (field != value)
+            {
+                field = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public string VocabFile
+    {
+        get => field ?? "";
+        set
+        {
+            if (field != value)
+            {
+                field = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public string RefText
+    {
+        get => field ?? "";
+        set
+        {
+            if (field != value)
+            {
+                field = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public string Device
+    {
+        get => field ?? "cuda";
+        set
+        {
+            if (field != value)
+            {
+                field = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
     public event PropertyChangedEventHandler? PropertyChanged;
 
     protected void OnPropertyChanged([CallerMemberName] string? name = null)

@@ -1,4 +1,5 @@
 ﻿using System.Buffers;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Text;
@@ -751,9 +752,49 @@ namespace uga_chacka
             var dlg = new OpenFileDialog
             {
                 Title = "Выбрать референсный аудиофайл",
-                Filter = "Аудиофайлы (*.wav;*.mp3)|*.wav;*.mp3|Все файлы (*.*)|*.*"
+                Filter = "Аудиофайлы (*.wav;*.mp3;*.ogg)|*.wav;*.mp3;*.ogg|Все файлы (*.*)|*.*"
             };
             if (dlg.ShowDialog() == true) TtsVoicePath.Text = dlg.FileName;
+        }
+
+        private void BrowseF5TtsCli_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new OpenFileDialog
+            {
+                Title = "Выбрать F5-TTS CLI",
+                Filter = "Исполняемые файлы (*.exe)|*.exe|Все файлы (*.*)|*.*"
+            };
+            if (dlg.ShowDialog() == true) TtsCliPath.Text = dlg.FileName;
+        }
+
+        private void BrowseModelCfg_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new OpenFileDialog
+            {
+                Title = "Выбрать конфиг модели",
+                Filter = "YAML файлы (*.yaml;*.yml)|*.yaml;*.yml|Все файлы (*.*)|*.*"
+            };
+            if (dlg.ShowDialog() == true) TtsModelCfg.Text = dlg.FileName;
+        }
+
+        private void BrowseCkptFile_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new OpenFileDialog
+            {
+                Title = "Выбрать файл весов",
+                Filter = "Safetensors (*.safetensors)|*.safetensors|Все файлы (*.*)|*.*"
+            };
+            if (dlg.ShowDialog() == true) TtsCkptFile.Text = dlg.FileName;
+        }
+
+        private void BrowseVocabFile_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new OpenFileDialog
+            {
+                Title = "Выбрать файл словаря",
+                Filter = "Текстовые файлы (*.txt)|*.txt|Все файлы (*.*)|*.*"
+            };
+            if (dlg.ShowDialog() == true) TtsVocabFile.Text = dlg.FileName;
         }
 
         private void BrowseDic_Click(object sender, RoutedEventArgs e)
@@ -1176,5 +1217,152 @@ namespace uga_chacka
             public double Threshold { get; set; }
             public int CurrentLowConfidenceIndex { get; set; } = -1;
         }
+
+        // ── TTS voiceover ────────────────────────────────────────────────────
+
+        private async void Voiceover_Click(object sender, RoutedEventArgs e)
+        {
+            var genText = GetResultPlainText();
+            if (string.IsNullOrWhiteSpace(genText))
+                genText = OriginalText.Text;
+
+            if (string.IsNullOrWhiteSpace(genText))
+            {
+                MessageBox.Show("Нет текста для озвучки.", "Внимание",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            var cliPath = _settings.Tts.F5TtsCliPath;
+            if (string.IsNullOrWhiteSpace(cliPath) || !File.Exists(cliPath))
+            {
+                MessageBox.Show(
+                    "Не указан или не найден путь к F5-TTS CLI.\nНастройте в разделе Настройки → TTS.",
+                    "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            var refAudio = _settings.Tts.VoicePath;
+            if (string.IsNullOrWhiteSpace(refAudio) || !File.Exists(refAudio))
+            {
+                MessageBox.Show(
+                    "Не указан или не найден референсный аудиофайл.\nНастройте в разделе Настройки → TTS.",
+                    "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            var saveDlg = new SaveFileDialog
+            {
+                Title = "Сохранить озвучку",
+                Filter = "WAV файлы (*.wav)|*.wav|Все файлы (*.*)|*.*",
+                FileName = "output.wav"
+            };
+            if (saveDlg.ShowDialog() != true) return;
+
+            var outputDir = Path.GetDirectoryName(saveDlg.FileName)!;
+            var outputFile = Path.GetFileName(saveDlg.FileName);
+
+            var tomlPath = Path.Combine(Path.GetTempPath(), $"f5tts_{Guid.NewGuid():N}.toml");
+            try
+            {
+                var toml = new StringBuilder();
+                toml.AppendLine($"ref_audio = \"{EscapeTomlString(refAudio)}\"");
+                toml.AppendLine($"ref_text = \"{EscapeTomlString(_settings.Tts.RefText)}\"");
+                toml.AppendLine("gen_text = '''");
+                toml.AppendLine(genText);
+                toml.AppendLine("'''");
+                toml.AppendLine("remove_silence = false");
+                File.WriteAllText(tomlPath, toml.ToString(), Encoding.UTF8);
+
+                var args = new StringBuilder();
+                args.Append($"-c \"{tomlPath}\"");
+
+                if (!string.IsNullOrWhiteSpace(_settings.Tts.ModelCfg))
+                    args.Append($" --model_cfg \"{_settings.Tts.ModelCfg}\"");
+                if (!string.IsNullOrWhiteSpace(_settings.Tts.CkptFile))
+                    args.Append($" --ckpt_file \"{_settings.Tts.CkptFile}\"");
+                if (!string.IsNullOrWhiteSpace(_settings.Tts.VocabFile))
+                    args.Append($" --vocab_file \"{_settings.Tts.VocabFile}\"");
+                if (!string.IsNullOrWhiteSpace(_settings.Tts.Device))
+                    args.Append($" --device {_settings.Tts.Device}");
+
+                args.Append($" --output_dir \"{outputDir}\"");
+                args.Append($" --output_file \"{outputFile}\"");
+
+                MainTabs.IsEnabled = false;
+                StatusCurrentHomograph.Text = "Запуск озвучки F5-TTS…";
+
+                var psi = new ProcessStartInfo
+                {
+                    FileName = cliPath,
+                    Arguments = args.ToString(),
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    CreateNoWindow = true,
+                    StandardOutputEncoding = Encoding.UTF8,
+                    StandardErrorEncoding = Encoding.UTF8
+                };
+
+                using var process = new Process { StartInfo = psi };
+                var stderr = new StringBuilder();
+
+                process.OutputDataReceived += (_, a) =>
+                {
+                    if (a.Data != null)
+                        Dispatcher.BeginInvoke(() =>
+                            StatusCurrentHomograph.Text = $"F5-TTS: {a.Data}");
+                };
+                process.ErrorDataReceived += (_, a) =>
+                {
+                    if (a.Data != null) stderr.AppendLine(a.Data);
+                };
+
+                process.Start();
+                process.BeginOutputReadLine();
+                process.BeginErrorReadLine();
+
+                await process.WaitForExitAsync();
+
+                if (process.ExitCode == 0)
+                {
+                    StatusCurrentHomograph.Text = "Озвучка завершена.";
+                    var result = MessageBox.Show(
+                        $"Файл сохранён:\n{saveDlg.FileName}\n\nОткрыть файл?",
+                        "Озвучка завершена",
+                        MessageBoxButton.YesNo, MessageBoxImage.Information);
+                    if (result == MessageBoxResult.Yes)
+                    {
+                        Process.Start(new ProcessStartInfo
+                        {
+                            FileName = saveDlg.FileName,
+                            UseShellExecute = true
+                        });
+                    }
+                }
+                else
+                {
+                    var errorText = stderr.ToString();
+                    MessageBox.Show(
+                        $"F5-TTS завершился с ошибкой (код {process.ExitCode}):\n\n{errorText}",
+                        "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                    StatusCurrentHomograph.Text = "Ошибка озвучки.";
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка запуска F5-TTS:\n{ex.Message}", "Ошибка",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+                StatusCurrentHomograph.Text = "";
+            }
+            finally
+            {
+                MainTabs.IsEnabled = true;
+                try { File.Delete(tomlPath); } catch { }
+            }
+        }
+
+        private static string EscapeTomlString(string s)
+            => s.Replace("\\", "\\\\").Replace("\"", "\\\"");
     }
 }
