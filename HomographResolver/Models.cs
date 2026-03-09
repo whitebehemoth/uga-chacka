@@ -53,6 +53,8 @@ public class LlmChoice
     public string Reasoning { get; set; } = "";
 }
 
+public sealed record FoundryModelStatus(string Id, string? Alias, bool IsCached, long? SizeBytes);
+
 public class LlmSettings : INotifyPropertyChanged
 {
     public string Type

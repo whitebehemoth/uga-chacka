@@ -1,4 +1,5 @@
 ﻿using System.Buffers;
+using System.Globalization;
 using System.IO;
 using System.Text;
 using System.IO.Compression;
@@ -183,6 +184,44 @@ namespace uga_chacka
                 _currentHomographIndex = Math.Clamp(state.CurrentLowConfidenceIndex, 0, _lowConfidence.Count - 1);
                 NavigateToCurrentHomograph();
             }
+        }
+
+        private async Task<bool> EnsureFoundryModelReadyAsync(IFoundryLocalLlmClient foundryClient, CancellationToken ct)
+        {
+            StatusCurrentHomograph.Text = "Проверка модели Foundry Local…";
+            var modelStatus = await foundryClient.GetModelStatusAsync(ct);
+            if (modelStatus == null)
+                throw new InvalidOperationException("Не удалось получить сведения о модели Foundry Local.");
+
+            var modelName = string.IsNullOrWhiteSpace(modelStatus.Alias) ? modelStatus.Id : modelStatus.Alias;
+            if (!modelStatus.IsCached)
+            {
+                var sizeText = modelStatus.SizeBytes.HasValue
+                    ? FormatSize(modelStatus.SizeBytes.Value)
+                    : "неизвестный размер";
+                var message = modelStatus.SizeBytes.HasValue
+                    ? $"Модель \"{modelName}\" еще не загружена и занимает около {sizeText}. Скачать сейчас?"
+                    : $"Модель \"{modelName}\" еще не загружена. Скачать сейчас?";
+
+                var result = MessageBox.Show(
+                    message,
+                    "Загрузка модели Foundry Local",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question);
+
+                if (result != MessageBoxResult.Yes)
+                {
+                    StatusCurrentHomograph.Text = "Загрузка модели отменена. Выберите другую модель.";
+                    return false;
+                }
+            }
+
+            var statusPrefix = modelStatus.IsCached ? "Подготовка модели" : "Загрузка модели";
+            StatusCurrentHomograph.Text = $"{statusPrefix}…";
+            var progress = new Progress<float>(p =>
+                StatusCurrentHomograph.Text = $"{statusPrefix}: {p:F0}%…");
+            await foundryClient.PrepareAsync(progress, ct);
+            return true;
         }
 
         private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
@@ -529,7 +568,7 @@ namespace uga_chacka
                 return;
             }
 
-            IsEnabled = false;
+            MainTabs.IsEnabled = false;
             _resolutionCts = new CancellationTokenSource();
             UpdateResolutionUI(true);
             StatusCurrentHomograph.Text = "Загрузка словаря…";
@@ -540,6 +579,12 @@ namespace uga_chacka
                 StatusCurrentHomograph.Text = $"Словарь: {dictionary.Count} слов. Разрешение…";
 
                 var llmClient = _llmClientFactory.CreateClient();
+
+                if (llmClient is IFoundryLocalLlmClient foundryClient)
+                {
+                    if (!await EnsureFoundryModelReadyAsync(foundryClient, _resolutionCts.Token))
+                        return;
+                }
 
                 var progress = new Progress<(int Current, int Total)>(p =>
                     StatusCurrentHomograph.Text = $"Омографы: {p.Current}/{p.Total}…");
@@ -569,7 +614,7 @@ namespace uga_chacka
             }
             finally
             {
-                IsEnabled = true;
+                MainTabs.IsEnabled = true;
                 UpdateResolutionUI(false);
                 _resolutionCts?.Dispose();
                 _resolutionCts = null;
@@ -1003,6 +1048,23 @@ namespace uga_chacka
         {
             if (Path.IsPathRooted(path)) return path;
             return Path.Combine(AppContext.BaseDirectory, path);
+        }
+
+        private static string FormatSize(long bytes)
+        {
+            if (bytes <= 0)
+                return "0 Б";
+
+            string[] suffixes = ["Б", "КБ", "МБ", "ГБ", "ТБ"];
+            double size = bytes;
+            int order = 0;
+            while (size >= 1024 && order < suffixes.Length - 1)
+            {
+                size /= 1024;
+                order++;
+            }
+
+            return string.Format(CultureInfo.CurrentCulture, "{0:F1} {1}", size, suffixes[order]);
         }
 
         private void ResetHomographState()
