@@ -143,6 +143,11 @@
                                       IsTextSearchEnabled="False"
                                       StaysOpenOnEdit="True"
                                       Text="Очистка текста">
+                                <ComboBox.ItemContainerStyle>
+                                    <Style TargetType="ComboBoxItem">
+                                        <EventSetter Event="PreviewMouseLeftButtonDown" Handler="CleanRuleItem_PreviewMouseLeftButtonDown"/>
+                                    </Style>
+                                </ComboBox.ItemContainerStyle>
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <CheckBox Content="{Binding Description}"

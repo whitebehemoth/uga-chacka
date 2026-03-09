@@ -76,6 +76,17 @@ namespace uga_chacka
             _settings.EnableAutoSave();
         }
 
+        private void CleanRuleItem_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is ComboBoxItem comboItem && comboItem.DataContext is CleanRule rule)
+            {
+                rule.IsSelected = !rule.IsSelected;
+                e.Handled = true;
+                if (_cleanRulesComboBox != null)
+                    _cleanRulesComboBox.IsDropDownOpen = true;
+            }
+        }
+
         // ── File menu ────────────────────────────────────────────────────────
 
         private void Open_Click(object sender, ExecutedRoutedEventArgs e)
