@@ -335,6 +335,19 @@ public class HomographConfig : INotifyPropertyChanged
         }
     }
 
+    public string CleanRegexPath
+    {
+        get => field ?? "";
+        set
+        {
+            if (field != value)
+            {
+                field = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
     public event PropertyChangedEventHandler? PropertyChanged;
 
     protected void OnPropertyChanged([CallerMemberName] string? name = null)

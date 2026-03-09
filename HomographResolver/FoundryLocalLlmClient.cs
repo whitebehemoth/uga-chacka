@@ -119,12 +119,12 @@ public sealed class FoundryLocalLlmClient : IFoundryLocalLlmClient
         {
             await FoundryLocalManager.CreateAsync(
                 new Configuration { AppName = "uga-chacka" },
-                NullLogger.Instance);
+                NullLogger.Instance, ct);
         }
 
         var settings = _settings.CurrentValue;
-        var catalog = await FoundryLocalManager.Instance.GetCatalogAsync();
-        var models = await catalog.ListModelsAsync();
+        var catalog = await FoundryLocalManager.Instance.GetCatalogAsync(ct);
+        var models = await catalog.ListModelsAsync(ct);
         var model = models.FirstOrDefault(m =>
             m.Id.Equals(settings.FoundryModel, StringComparison.InvariantCultureIgnoreCase)
             || (!string.IsNullOrWhiteSpace(m.Alias)

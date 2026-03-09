@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:uga_chacka"
         mc:Ignorable="d"
-        Title="Озвучка книг" Height="650" Width="1000"
+        Title="Озвучка книг" Height="648" Width="1102"
         MinHeight="400" MinWidth="640"
         PreviewKeyDown="Window_PreviewKeyDown"
         Loaded="Window_Loaded">
@@ -18,14 +18,10 @@
     <Window.CommandBindings>
         <CommandBinding Command="ApplicationCommands.Open" Executed="Open_Click"/>
         <CommandBinding Command="ApplicationCommands.Save" Executed="Save_Click"/>
-        <CommandBinding Command="ApplicationCommands.Find" Executed="Find_Executed"/>
-        <CommandBinding Command="ApplicationCommands.Replace" Executed="Replace_Executed"/>
     </Window.CommandBindings>
     <Window.InputBindings>
         <KeyBinding Key="O" Modifiers="Control" Command="ApplicationCommands.Open"/>
         <KeyBinding Key="S" Modifiers="Control" Command="ApplicationCommands.Save"/>
-        <KeyBinding Key="F" Modifiers="Control" Command="ApplicationCommands.Find"/>
-        <KeyBinding Key="H" Modifiers="Control" Command="ApplicationCommands.Replace"/>
     </Window.InputBindings>
 
     <DockPanel>
@@ -44,12 +40,9 @@
                 <Separator/>
                 <MenuItem Header="_Выход" Click="Exit_Click"/>
             </MenuItem>
-            <MenuItem Header="_Действие">
-                <MenuItem Header="Разрешить омографы" Click="ResolveHomographs_Click"/>
-                <MenuItem Header="Расставить ударения" Click="ApplyStress_Click"/>
-                <Separator/>
-                <MenuItem Header="Поиск"  InputGestureText="Ctrl+F" Click="Search_Click"/>
-                <MenuItem Header="Замена" InputGestureText="Ctrl+H" Click="Replace_Click"/>
+            <MenuItem Header="Обработка текста">
+                <MenuItem Header="Ударения в омографы" Click="ResolveHomographs_Click"/>
+                <MenuItem Header="Ударения в остальные слова" Click="ApplyStress_Click"/>
                 <Separator/>
                 <MenuItem Header="Озвучить" Click="Voiceover_Click"/>
             </MenuItem>
@@ -110,42 +103,56 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
                     <ToolBarTray Grid.Row="0" IsLocked="True">
-                        <ToolBar>
+                        <ToolBar x:Name="EditHomo">
                             <Button x:Name="PrevHomographBtn"
-                                    Content="◄ Предыдущий"
+                                    Content="◄"
                                     IsEnabled="False"
                                     Padding="8,2"
+                                    ToolTip="Предыдущий неуверенный омограф Alt-W"
                                     Click="PrevHomograph_Click"/>
                             <Separator/>
                             <TextBlock x:Name="HomographIndexText"
                                        VerticalAlignment="Center"
                                        Margin="2,0"
-                                       MinWidth="30"
+                                       MinWidth="60"
+                                       ToolTip="Навигация по омографам. Alt+цифра - выбрать вариант ударения"
                                        TextAlignment="Center"/>
                             <Separator/>
                             <Button x:Name="NextHomographBtn"
-                                    Content="Следующий ►"
+                                    Content="►"
                                     IsEnabled="False"
                                     Padding="8,2"
+                                    ToolTip="Следующий неуверенный омограф Alt-S"
                                     Click="NextHomograph_Click"/>
                             <Separator/>
-                            <TextBlock x:Name="ManualEditWarning"
-                                       Foreground="Red"
-                                       VerticalAlignment="Center"
-                                       Margin="8,0,0,0"
-                                       Visibility="Collapsed"
-                                       Text="Омографы были модифицированы вручную, навигация может сбоить"/>
                         </ToolBar>
-                        
+
                         <ToolBar x:Name="FindReplaceToolBar">
-                            
-                            <TextBox x:Name="FindTextBox" Width="180" Margin="0,0,6,0" KeyDown="FindTextBox_KeyDown"/>
-                            <Button Content="Найти" Padding="5,2" Margin="0,0,8,0" Click="FindNext_Click"/>
+
+                            <TextBox x:Name="FindTextBox" Width="132" KeyDown="FindTextBox_KeyDown"/>
+                            <Button Content="🔍" Padding="5,2" Margin="0,0,8,0" Click="FindNext_Click" ToolTip="Найти в тексте Alt F"/>
                             <Separator/>
-                            <TextBox x:Name="ReplaceTextBox" Width="180" Margin="0,0,6,0" KeyDown="ReplaceTextBox_KeyDown"/>
-                            <Button Content="Заменить" Padding="5,2" Click="ReplaceNext_Click"/>
+                            <TextBox x:Name="ReplaceTextBox" Width="132" KeyDown="ReplaceTextBox_KeyDown" ToolTip="Найти и заменить Alt R"/>
+                            <Button Content="🔠" Padding="5,2" Click="ReplaceNext_Click"/>
+                            <Separator/>
+                            <ComboBox x:Name="CleanRulesComboBox"
+                                      Width="220"
+                                      Margin="0,0,6,0"
+                                      IsEditable="True"
+                                      IsReadOnly="True"
+                                      IsTextSearchEnabled="False"
+                                      StaysOpenOnEdit="True"
+                                      Text="Очистка текста">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <CheckBox Content="{Binding Description}"
+                                                  IsChecked="{Binding IsSelected, Mode=TwoWay}"/>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                            <Button Content="⚡" Padding="5,2" Click="ApplyCleanRules_Click" ToolTip="Применить выбранные модификаторы (см словарь clean.rex)"/>
                         </ToolBar>
-                        
+
                     </ToolBarTray>
                     <RichTextBox x:Name="ResultText"
                                  Grid.Row="1"
@@ -165,7 +172,7 @@
                 <TabControl TabStripPlacement="Left">
 
                     <!-- LLM -->
-                    <TabItem Header="LLM">
+                    <TabItem Header="LLM" Height="24" Margin="-2,-2,0,0" VerticalAlignment="Top">
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
                             <StackPanel Margin="16,12" MaxWidth="480">
                                 <TextBlock Text="Тип подключения" FontWeight="SemiBold" Margin="0,0,0,4"/>
@@ -252,7 +259,7 @@
                     </TabItem>
 
                     <!-- Омографы -->
-                    <TabItem Header="Омографы">
+                    <TabItem Header="Подготовка текста">
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
                             <StackPanel Margin="16,12" MaxWidth="480">
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
@@ -275,6 +282,11 @@
                                 <DockPanel Margin="0,0,0,8">
                                     <Button DockPanel.Dock="Right" Content="…" Width="32" Margin="4,0,0,0" Click="BrowseDicA_Click"/>
                                     <TextBox x:Name="DicAPath" Text="{Binding Homograph.DicAPath, Mode=TwoWay, Converter={StaticResource ListToStringConverter}, UpdateSourceTrigger=PropertyChanged}" Height="64" AcceptsReturn="True"/>
+                                </DockPanel>
+                                <TextBlock Text="Файл правил очистки (clean.rex)" Margin="0,0,0,4"/>
+                                <DockPanel Margin="0,0,0,8">
+                                    <Button DockPanel.Dock="Right" Content="…" Width="32" Margin="4,0,0,0" Click="BrowseCleanRegex_Click"/>
+                                    <TextBox x:Name="CleanRegexPath" Text="{Binding Homograph.CleanRegexPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                 </DockPanel>
                             </StackPanel>
                         </ScrollViewer>

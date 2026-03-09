@@ -1,9 +1,12 @@
 ﻿using System.Buffers;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Text;
 using System.IO.Compression;
+using System.Linq;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Windows;
@@ -28,6 +31,8 @@ namespace uga_chacka
         private int _currentHomographIndex = -1;
         private Run? _highlightedRun;
         private bool _suppressResultTextChanged;
+        private readonly ObservableCollection<CleanRule> _cleanRules = [];
+        private ComboBox? _cleanRulesComboBox;
 
         private CancellationTokenSource? _resolutionCts;
 
@@ -58,6 +63,15 @@ namespace uga_chacka
                     _settings.Llm.ApiKey = LlmApiKey.Password;
                 }
             };
+
+            _settings.Homograph.PropertyChanged += HomographSettingsChanged;
+            _cleanRulesComboBox = FindName("CleanRulesComboBox") as ComboBox;
+            if (_cleanRulesComboBox != null)
+            {
+                _cleanRulesComboBox.ItemsSource = _cleanRules;
+            }
+
+            LoadCleanRules();
 
             _settings.EnableAutoSave();
         }
@@ -234,11 +248,19 @@ namespace uga_chacka
 
             switch (key)
             {
-                case Key.W:
-                    NextHomograph_Click(this, new RoutedEventArgs());
+                case Key.F:
+                    FindNext_Click(this, new RoutedEventArgs());
+                    e.Handled = true;
+                    break;
+                case Key.R:
+                    ReplaceNext_Click(this, new RoutedEventArgs());
                     e.Handled = true;
                     break;
                 case Key.S:
+                    NextHomograph_Click(this, new RoutedEventArgs());
+                    e.Handled = true;
+                    break;
+                case Key.W:
                     PrevHomograph_Click(this, new RoutedEventArgs());
                     e.Handled = true;
                     break;
@@ -267,32 +289,6 @@ namespace uga_chacka
 
         // ── Search & replace ───────────────────────────────────────────────
 
-        private void Find_Executed(object sender, ExecutedRoutedEventArgs e)
-        {
-            Search_Click(sender, e);
-        }
-
-        private void Replace_Executed(object sender, ExecutedRoutedEventArgs e)
-        {
-            Replace_Click(sender, e);
-        }
-
-        private void Search_Click(object sender, RoutedEventArgs e)
-        {
-            var findBox = GetFindTextBox();
-            if (findBox == null) return;
-            findBox.Focus();
-            findBox.SelectAll();
-        }
-
-        private void Replace_Click(object sender, RoutedEventArgs e)
-        {
-            var replaceBox = GetReplaceTextBox();
-            if (replaceBox == null) return;
-            replaceBox.Focus();
-            replaceBox.SelectAll();
-        }
-
         private void FindTextBox_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key != Key.Enter) return;
@@ -307,22 +303,10 @@ namespace uga_chacka
             ReplaceNext_Click(sender, e);
         }
 
-        private TextBox? GetFindTextBox()
-        {
-            return FindReplaceToolBar.FindName("FindTextBox") as TextBox;
-        }
-
-        private TextBox? GetReplaceTextBox()
-        {
-            return FindReplaceToolBar.FindName("ReplaceTextBox") as TextBox;
-        }
 
         private void FindNext_Click(object sender, RoutedEventArgs e)
         {
-            var findBox = GetFindTextBox();
-            if (findBox == null) return;
-
-            var pattern = findBox.Text;
+            var pattern = FindTextBox.Text;
             if (string.IsNullOrEmpty(pattern)) return;
 
             if (!TryFindNextFromCursor(pattern, out var matchIndex))
@@ -337,14 +321,10 @@ namespace uga_chacka
 
         private void ReplaceNext_Click(object sender, RoutedEventArgs e)
         {
-            var findBox = GetFindTextBox();
-            var replaceBox = GetReplaceTextBox();
-            if (findBox == null || replaceBox == null) return;
-
-            var pattern = findBox.Text;
+            var pattern = FindTextBox.Text;
             if (string.IsNullOrEmpty(pattern)) return;
 
-            var replacement = replaceBox.Text;
+            var replacement = ReplaceTextBox.Text;
             if (TryGetResultSelection(out var selectionStart, out var selectionLength, out var selectedText)
                 && selectionLength > 0
                 && selectedText == pattern)
@@ -501,7 +481,6 @@ namespace uga_chacka
         private void MarkResultManualEdit()
         {
             ResetHomographState();
-            ManualEditWarning.Visibility = Visibility.Visible;
         }
 
         // ── Accent dictionaries ─────────────────────────────────────────────
@@ -636,7 +615,6 @@ namespace uga_chacka
             _lowConfidence.Clear();
             _currentHomographIndex = -1;
             _highlightedRun = null;
-            ManualEditWarning.Visibility = Visibility.Collapsed;
 
             int lastPos = 0;
             foreach (var h in homographs)
@@ -717,10 +695,10 @@ namespace uga_chacka
             run.BringIntoView();
 
             HomographIndexText.Text = $"({_currentHomographIndex + 1}/{_lowConfidence.Count})";
-            if (!h.Variants.Any(v => v.Target == HomographIndexText.Text))
-            {
-                ManualEditWarning.Visibility = Visibility.Visible;
-            }
+            //if (!h.Variants.Any(v => v.Target == HomographIndexText.Text))
+            //{
+            //    Text = "Омографы были модифицированы вручную, навигация может сбоить" 
+            //}
             var variants = string.Join(" | ", h.Variants.Select(v => v.Target));
             var reasoning = string.IsNullOrWhiteSpace(h.Reasoning) ? "" : $" ({h.Reasoning})";
             StatusCurrentHomograph.Text = $"[{h.Confidence:P0}] {h.OriginalWord}: {variants}{reasoning}";
@@ -743,6 +721,96 @@ namespace uga_chacka
             var text = GetResultPlainText();
             if (string.IsNullOrWhiteSpace(text))
                 ResetHomographState();
+        }
+
+        // ── Clean rules ───────────────────────────────────────────────────
+
+        private void HomographSettingsChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(HomographConfig.CleanRegexPath))
+                LoadCleanRules();
+        }
+
+        private void LoadCleanRules()
+        {
+            foreach (var rule in _cleanRules)
+                rule.PropertyChanged -= CleanRuleChanged;
+
+            _cleanRules.Clear();
+
+            var path = ResolvePath(_settings.Homograph.CleanRegexPath);
+            if (!File.Exists(path))
+                return;
+
+            string? pendingDescription = null;
+            foreach (var rawLine in File.ReadLines(path))
+            {
+                var trimmed = rawLine.Trim();
+                if (string.IsNullOrWhiteSpace(trimmed))
+                    continue;
+
+                if (trimmed.StartsWith('#'))
+                {
+                    pendingDescription = trimmed.TrimStart('#').Trim();
+                    continue;
+                }
+
+                int separatorIndex = rawLine.IndexOf('=');
+                if (separatorIndex < 0)
+                    continue;
+
+                var pattern = rawLine[..separatorIndex];
+                var replacement = rawLine[(separatorIndex + 1)..];
+                var description = string.IsNullOrWhiteSpace(pendingDescription)
+                    ? pattern
+                    : pendingDescription;
+
+                var rule = new CleanRule(description, pattern, replacement);
+                rule.PropertyChanged += CleanRuleChanged;
+                _cleanRules.Add(rule);
+                pendingDescription = null;
+            }
+        }
+
+        private void CleanRuleChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(CleanRule.IsSelected) && _cleanRulesComboBox != null)
+                _cleanRulesComboBox.Text = "Правила очистки";
+        }
+
+        private async void ApplyCleanRules_Click(object sender, RoutedEventArgs e)
+        {
+            var selectedRules = _cleanRules.Where(r => r.IsSelected).ToList();
+            if (selectedRules.Count == 0)
+            {
+                MessageBox.Show("Выберите хотя бы одно правило очистки.", "Очистка текста",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var text = GetResultPlainText();
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                MessageBox.Show("Нет текста в результате для очистки.", "Очистка текста",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            try
+            {
+                foreach (var rule in selectedRules)
+                    text = Regex.Replace(text, rule.Pattern, rule.Replacement, RegexOptions.Multiline);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка применения правил очистки:\n{ex.Message}", "Очистка текста",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            SetResultText(text);
+            ResetHomographState();
+            await UpdateStatisticsAsync(text);
         }
 
         // ── Browse dialogs ───────────────────────────────────────────────────
@@ -807,6 +875,12 @@ namespace uga_chacka
         {
             var dlg = new OpenFileDialog { Title = "Выбрать словарь ударений", Filter = "JSON (*.json)|*.json" };
             if (dlg.ShowDialog() == true) DicAPath.Text += (Environment.NewLine + dlg.FileName);
+        }
+
+        private void BrowseCleanRegex_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new OpenFileDialog { Title = "Выбрать файл правил очистки", Filter = "Rex файлы (*.rex)|*.rex|Все файлы (*.*)|*.*" };
+            if (dlg.ShowDialog() == true ) CleanRulesComboBox.Text = dlg.FileName;
         }
 
         // ── Statistics ──────────────────────────────────────────────────────
@@ -1055,6 +1129,20 @@ namespace uga_chacka
             return range.Text.TrimEnd('\r', '\n');
         }
 
+        private void SetResultText(string text)
+        {
+            _suppressResultTextChanged = true;
+            var doc = new FlowDocument
+            {
+                FontFamily = new FontFamily("Segoe UI"),
+                FontSize = 14,
+                PagePadding = new Thickness(6)
+            };
+            doc.Blocks.Add(new Paragraph(new Run(text)));
+            ResultText.Document = doc;
+            _suppressResultTextChanged = false;
+        }
+
         private byte[] GetResultRtfBytes()
         {
             var range = new TextRange(ResultText.Document.ContentStart, ResultText.Document.ContentEnd);
@@ -1119,7 +1207,6 @@ namespace uga_chacka
             HomographIndexText.Text = "";
             StatusCurrentHomograph.Text = "";
             StatusHomographCount.Text = "0";
-            ManualEditWarning.Visibility = Visibility.Collapsed;
         }
 
         private void UpdateResolutionUI(bool isProcessing)
@@ -1216,6 +1303,37 @@ namespace uga_chacka
         {
             public double Threshold { get; set; }
             public int CurrentLowConfidenceIndex { get; set; } = -1;
+        }
+
+        private sealed class CleanRule : INotifyPropertyChanged
+        {
+            private bool _isSelected;
+
+            public CleanRule(string description, string pattern, string replacement)
+            {
+                Description = description;
+                Pattern = pattern;
+                Replacement = replacement;
+            }
+
+            public string Description { get; }
+            public string Pattern { get; }
+            public string Replacement { get; }
+
+            public bool IsSelected
+            {
+                get => _isSelected;
+                set
+                {
+                    if (_isSelected == value)
+                        return;
+
+                    _isSelected = value;
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsSelected)));
+                }
+            }
+
+            public event PropertyChangedEventHandler? PropertyChanged;
         }
 
         // ── TTS voiceover ────────────────────────────────────────────────────
