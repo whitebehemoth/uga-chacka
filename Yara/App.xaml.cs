@@ -1,10 +1,9 @@
 using System.IO;
 using System.Text;
 using System.Windows;
-using HomographResolver;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
+using WhiteBehemoth.Resolver.Llm;
 using WhiteBehemoth.Yara.Services;
 using WhiteBehemoth.Yara.Settings;
 
@@ -47,10 +46,10 @@ public partial class App : Application
         services.AddOptions<AppSettings>()
             .Bind(Configuration.GetSection("AppSettings"));
 
-        // Bridge new LlmConfig → existing LlmSettings for HomographResolver clients
+        // LlmSettingsProvider bridges LlmConfig → LlmSettings record
         services.AddSingleton<LlmSettingsProvider>();
-        services.AddSingleton<IOptionsMonitor<LlmSettings>>(sp =>
-            sp.GetRequiredService<LlmSettingsProvider>());
+        services.AddSingleton<Func<LlmSettings>>(sp =>
+            () => sp.GetRequiredService<LlmSettingsProvider>().CurrentValue);
 
         services.AddSingleton<OpenAiLlmClient>();
         services.AddSingleton<FoundryLocalLlmClient>();

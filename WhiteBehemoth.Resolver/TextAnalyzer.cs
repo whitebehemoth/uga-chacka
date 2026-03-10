@@ -1,5 +1,5 @@
 using System.Text.RegularExpressions;
-using HomographResolver;
+using WhiteBehemoth.Resolver.Models;
 
 namespace WhiteBehemoth.Resolver;
 

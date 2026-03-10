@@ -87,9 +87,17 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
-                    <!-- Toolbar: homograph nav + clean rules -->
+                    <!-- Toolbar: threshold + homograph nav + clean rules -->
                     <ToolBarTray Grid.Row="0" IsLocked="False">
                         <ToolBar x:Name="EditHomo">
+                            <TextBlock Text="Порог для проверки: " VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding Homograph.Threshold, StringFormat='{}{0:F0}%'}" VerticalAlignment="Center" MinWidth="30"/>
+                            <Slider x:Name="HomographThreshold"
+                                    Value="{Binding Homograph.Threshold, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    Minimum="0" Maximum="100" Width="100"
+                                    TickFrequency="1" IsSnapToTickEnabled="True"
+                                    VerticalAlignment="Center"/>
+                            <Separator/>
                             <Button x:Name="PrevBtn"
                                     Content="◄" IsEnabled="False" Padding="8,2"
                                     ToolTip="Предыдущий неуверенный омограф (Alt+W)"
@@ -132,11 +140,13 @@
                     <ToolBarTray Grid.Row="1" IsLocked="False"
                                  x:Name="FindReplaceBar" Visibility="Collapsed">
                         <ToolBar>
+                            <TextBlock Text="Найти: " VerticalAlignment="Center"/>
                             <TextBox x:Name="FindTextBox" Width="160"
                                      KeyDown="FindTextBox_KeyDown"/>
                             <Button Content="🔍" Padding="5,2" Margin="0,0,8,0"
                                     Click="FindNext_Click" ToolTip="Найти"/>
                             <Separator/>
+                            <TextBlock Text="Заменить на: " VerticalAlignment="Center"/>
                             <TextBox x:Name="ReplaceTextBox" Width="160"
                                      KeyDown="ReplaceTextBox_KeyDown"/>
                             <Button Content="🔠" Padding="5,2"
@@ -182,10 +192,13 @@
                                               SelectionChanged="ActiveOpenAiConfig_Changed"/>
                                     <RadioButton x:Name="UseFoundry" Content="Foundry Local" GroupName="LlmProvider"
                                                  Checked="LlmProvider_Changed" Margin="0,4,0,4"/>
-                                    <ComboBox x:Name="ActiveFoundryModel" Margin="20,0,0,4"
-                                              DisplayMemberPath="DisplayText"
-                                              SelectionChanged="ActiveFoundryModel_Changed"/>
-                                    
+                                    <DockPanel Margin="20,0,0,4">
+                                        <Button DockPanel.Dock="Right" Content="↻" Padding="6,2" Margin="4,0,0,0"
+                                                Click="RefreshFoundryModels_Click" ToolTip="Обновить список моделей"/>
+                                        <ComboBox x:Name="ActiveFoundryModel"
+                                                  DisplayMemberPath="DisplayText"
+                                                  SelectionChanged="ActiveFoundryModel_Changed"/>
+                                    </DockPanel>
                                 </StackPanel>
 
                                 <Separator Margin="0,0,0,12"/>
@@ -200,9 +213,9 @@
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="*"/>
                                     </Grid.RowDefinitions>
-                                <TextBlock Grid.Row ="0" Grid.Column ="0" Text="Конфигурации OpenAI" FontWeight="SemiBold" Margin="0,0,0,8"/>
-                                <TextBlock Grid.Row ="0" Grid.Column ="1" Text="Параметры" FontWeight="SemiBold" Margin="12,0,0,8"/>
-                                    <StackPanel Grid.Row ="1" >
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Конфигурации OpenAI" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="1" Text="Параметры" FontWeight="SemiBold" Margin="12,0,0,8"/>
+                                    <StackPanel Grid.Row="1">
                                         <ListBox x:Name="OpenAiConfigList" Height="145"
                                                  DisplayMemberPath="Name"
                                                  SelectionChanged="OpenAiConfigList_SelectionChanged"/>
@@ -213,7 +226,7 @@
                                                     Click="RemoveOpenAiConfig_Click"/>
                                         </StackPanel>
                                     </StackPanel>
-                                    <StackPanel Grid.Row ="1" Grid.Column="1" Margin="12,0,0,0"
+                                    <StackPanel Grid.Row="1" Grid.Column="1" Margin="12,0,0,0"
                                                 DataContext="{Binding SelectedItem, ElementName=OpenAiConfigList}">
                                         <TextBlock Text="Имя" Margin="0,0,0,2"/>
                                         <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
@@ -225,27 +238,11 @@
                                         <TextBox Text="{Binding Model, UpdateSourceTrigger=PropertyChanged}"
                                                  Margin="0,0,0,8"/>
                                         <TextBlock Text="API Key" Margin="0,0,0,2"/>
-                                        <PasswordBox x:Name="OaiApiKey" Margin="0,0,0,8"/>
+                                        <TextBox x:Name="OaiApiKey"
+                                                 Text="{Binding ApiKey, UpdateSourceTrigger=PropertyChanged}"
+                                                 Margin="0,0,0,8"/>
                                     </StackPanel>
                                 </Grid>
-
-                                <Separator Margin="0,0,0,12"/>
-
-                                <!-- Foundry Local models -->
-                                <TextBlock Text="Модели Foundry Local" FontWeight="SemiBold" Margin="0,0,0,8"/>
-                                <StackPanel Margin="0,0,0,16">
-
-                                    <ListBox x:Name="FoundryModelList" Height="120">
-                                        <ListBox.ItemTemplate>
-                                            <DataTemplate>
-                                                <StackPanel Orientation="Horizontal">
-                                                    <TextBlock Text="{Binding StatusIcon}" Width="20"/>
-                                                    <TextBlock Text="{Binding Id}"/>
-                                                </StackPanel>
-                                            </DataTemplate>
-                                        </ListBox.ItemTemplate>
-                                    </ListBox>
-                                </StackPanel>
 
                                 <Separator Margin="0,0,0,12"/>
 
@@ -267,20 +264,10 @@
                         </ScrollViewer>
                     </TabItem>
 
-                    <!-- Подготовка текста -->
-                    <TabItem Header="Подготовка текста">
+                    <!-- Общие -->
+                    <TabItem Header="Общие">
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
                             <StackPanel Margin="16,12" MaxWidth="480">
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                                    <TextBlock Text="Порог вероятности: " FontWeight="SemiBold"/>
-                                    <TextBlock Text="{Binding Homograph.Threshold, StringFormat=F0}" FontWeight="SemiBold"/>
-                                    <TextBlock Text="%" FontWeight="SemiBold"/>
-                                </StackPanel>
-                                <Slider x:Name="HomographThreshold"
-                                        Value="{Binding Homograph.Threshold, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                        Minimum="0" Maximum="100"
-                                        TickFrequency="1" IsSnapToTickEnabled="True"
-                                        TickPlacement="BottomRight" Margin="0,0,0,20"/>
                                 <TextBlock Text="Словарь омографов (dic.json)" Margin="0,0,0,4"/>
                                 <DockPanel Margin="0,0,0,8">
                                     <Button DockPanel.Dock="Right" Content="…" Width="32"
@@ -303,14 +290,7 @@
                                     <TextBox x:Name="CleanRegexPath"
                                              Text="{Binding Homograph.CleanRegexPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                 </DockPanel>
-                            </StackPanel>
-                        </ScrollViewer>
-                    </TabItem>
-
-                    <!-- Общие -->
-                    <TabItem Header="Общие">
-                        <ScrollViewer VerticalScrollBarVisibility="Auto">
-                            <StackPanel Margin="16,12" MaxWidth="480">
+                                <Separator Margin="0,0,0,12"/>
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                                     <TextBlock Text="Размер шрифта: " FontWeight="SemiBold"/>
                                     <TextBlock Text="{Binding General.DefaultFontSize, StringFormat=F0}" FontWeight="SemiBold"/>

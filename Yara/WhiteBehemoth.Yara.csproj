@@ -12,23 +12,26 @@
 
   <ItemGroup>
     <ProjectReference Include="..\WhiteBehemoth.Resolver\WhiteBehemoth.Resolver.csproj" />
-    <ProjectReference Include="..\HomographResolver\HomographResolver.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Content Include="appsettings.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\HomographResolver\dic.json" Link="HomographResolver\dic.json">
+    <Content Include="..\dics\dic.json" Link="dics\dic.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\HomographResolver\dic-a.json" Link="HomographResolver\dic-a.json">
+    <Content Include="..\dics\dic-al.json" Link="dics\dic-al.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\HomographResolver\dic-a2.json" Link="HomographResolver\dic-a2.json">
+    <Content Include="..\dics\dic-a2l.json" Link="dics\dic-a2l.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\HomographResolver\clean.rex" Link="HomographResolver\clean.rex">
+    <Content Include="..\dics\dic-yo.json" Link="dics\dic-yo.json">
+     <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+      
+      <Content Include="..\dics\clean.rex" Link="dics\clean.rex">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

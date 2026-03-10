@@ -29,6 +29,12 @@ public class LlmConfig : INotifyPropertyChanged
         set { if (field != value) { field = value; OnPropertyChanged(); } }
     }
 
+    public List<string> KnownFoundryModels
+    {
+        get => field ?? [];
+        set { field = value; OnPropertyChanged(); }
+    }
+
     public event PropertyChangedEventHandler? PropertyChanged;
 
     protected void OnPropertyChanged([CallerMemberName] string? name = null)

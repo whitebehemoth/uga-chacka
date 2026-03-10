@@ -11,10 +11,11 @@ using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using HomographResolver;
 using Microsoft.Extensions.Options;
 using Microsoft.Win32;
 using WhiteBehemoth.Resolver;
+using WhiteBehemoth.Resolver.Llm;
+using WhiteBehemoth.Resolver.Models;
 using WhiteBehemoth.Yara.Models;
 using WhiteBehemoth.Yara.Settings;
 
@@ -63,17 +64,25 @@ public partial class MainWindow : Window
         _openAiConfigs.CollectionChanged += (_, _) =>
             _settings.Llm.OpenAiEndpoints = [.. _openAiConfigs];
 
-        OaiApiKey.PasswordChanged += (_, _) =>
-        {
-            if (OpenAiConfigList.SelectedItem is OpenAiEndpoint ep)
-                ep.ApiKey = OaiApiKey.Password;
-        };
+        // Load known foundry models from config into the dropdown
+        foreach (var modelId in _settings.Llm.KnownFoundryModels)
+            ActiveFoundryModel.Items.Add(new FoundryModelItem { Id = modelId, IsCached = true });
 
         // Restore active provider selection
         var provider = _settings.Llm.SelectedProvider ?? "";
         if (provider.StartsWith("foundry:"))
         {
             UseFoundry.IsChecked = true;
+            // Restore selection in the foundry model dropdown
+            var modelId = provider[8..];
+            foreach (FoundryModelItem item in ActiveFoundryModel.Items)
+            {
+                if (item.Id.Equals(modelId, StringComparison.OrdinalIgnoreCase))
+                {
+                    ActiveFoundryModel.SelectedItem = item;
+                    break;
+                }
+            }
         }
         else
         {
@@ -471,8 +480,6 @@ public partial class MainWindow : Window
         var text = GetPlainText();
         if (string.IsNullOrWhiteSpace(text))
         {
-            MessageBox.Show("Нет текста для обработки.", "Внимание",
-                MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -486,7 +493,7 @@ public partial class MainWindow : Window
         var wordSet = new HashSet<string>(
             TextAnalyzer.WordRegex().Matches(text).Select(m => m.Value.ToLowerInvariant()));
 
-        var stressMap = new Dictionary<string, StressEntry>(StringComparer.OrdinalIgnoreCase);
+        var stressMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         foreach (var rawPath in _settings.Homograph.DicAPath)
         {
             var path = ResolvePath(rawPath);
@@ -584,7 +591,7 @@ public partial class MainWindow : Window
         var oldLength = run.Text.Length;
         run.Text = variant.Target;
         homograph.StressedWord = variant.Target;
-        homograph.ChosenIndex = variant.Index;
+        homograph.ChosenIndex = variant.Ref;
         homograph.Confidence = 1.0;
         homograph.Length = variant.Target.Length;
 
@@ -836,8 +843,7 @@ public partial class MainWindow : Window
 
     private void OpenAiConfigList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (OpenAiConfigList.SelectedItem is OpenAiEndpoint ep)
-            OaiApiKey.Password = ep.ApiKey;
+        // Selection drives DataContext binding for the details panel
     }
 
     private void AddOpenAiConfig_Click(object sender, RoutedEventArgs e)
@@ -855,7 +861,6 @@ public partial class MainWindow : Window
 
     private async void RefreshFoundryModels_Click(object sender, RoutedEventArgs e)
     {
-        FoundryModelList.Items.Clear();
         ActiveFoundryModel.Items.Clear();
 
         try
@@ -869,14 +874,17 @@ public partial class MainWindow : Window
 
             var catalog = await Microsoft.AI.Foundry.Local.FoundryLocalManager.Instance.GetCatalogAsync();
             var models = await catalog.ListModelsAsync();
+            var knownIds = new List<string>();
 
             foreach (var m in models)
             {
                 var isCached = await m.IsCachedAsync();
-                var item = new FoundryModelItem { Id = m.Id, IsCached = isCached };
-                FoundryModelList.Items.Add(item);
-                ActiveFoundryModel.Items.Add(item);
+                ActiveFoundryModel.Items.Add(new FoundryModelItem { Id = m.Id, IsCached = isCached });
+                knownIds.Add(m.Id);
             }
+
+            // Persist known models for next startup
+            _settings.Llm.KnownFoundryModels = knownIds;
 
             // Restore selection
             var current = _settings.Llm.SelectedProvider ?? "";
@@ -895,7 +903,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            FoundryModelList.Items.Add(new FoundryModelItem
+            ActiveFoundryModel.Items.Add(new FoundryModelItem
             {
                 Id = $"Ошибка: {ex.Message}",
                 IsCached = false

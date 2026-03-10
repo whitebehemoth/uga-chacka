@@ -1,4 +1,4 @@
-using HomographResolver;
+using WhiteBehemoth.Resolver.Models;
 
 namespace WhiteBehemoth.Resolver;
 
