@@ -28,11 +28,11 @@ public partial class MainWindow : Window
 
     private string? _currentFilePath;
     private List<ResolvedHomograph> _allHomographs = [];
-    private List<Run> _homographRuns = [];
-    private List<(ResolvedHomograph Homograph, Run Run)> _lowConfidence = [];
+    private List<ResolvedHomograph> _lowConfidence = [];
     private int _currentHomographIndex = -1;
-    private Run? _highlightedRun;
     private bool _suppressTextChanged;
+
+    private HomographColorizer? _colorizer;
 
     private CancellationTokenSource? _resolutionCts;
     private readonly ObservableCollection<CleanRule> _cleanRules = [];
@@ -268,11 +268,21 @@ public partial class MainWindow : Window
                     return;
             }
 
-            // Build document with "slots" for each homograph
-            BuildDocumentWithSlots(text, matches);
+            // Prepare AvalonEdit text and colorizers
+            _suppressTextChanged = true;
+            TextEditor.Text = text;
+            _suppressTextChanged = false;
             TextEditor.IsReadOnly = true;
 
             _allHomographs.Clear();
+            TextEditor.TextArea.TextView.LineTransformers.Clear();
+            
+            var docMatches = matches.Select(m => new DocumentMatch { Start = m.Start, Length = m.Length }).ToList();
+            var matchColorizer = new MatchColorizer(docMatches);
+            _colorizer = new HomographColorizer(_allHomographs, () => _settings.Homograph.Threshold);
+            TextEditor.TextArea.TextView.LineTransformers.Add(matchColorizer);
+            TextEditor.TextArea.TextView.LineTransformers.Add(_colorizer);
+
             int shift = 0;
             int i = 0;
 
@@ -281,25 +291,31 @@ public partial class MainWindow : Window
             {
                 resolved.AbsolutePosition = resolved.OriginalPosition + shift;
                 resolved.Length = resolved.StressedWord.Length;
-                shift += resolved.StressedWord.Length - resolved.OriginalLength;
 
                 _allHomographs.Add(resolved);
 
-                // Update the Run for this homograph
-                var run = _homographRuns[i];
-                run.Text = resolved.StressedWord;
-                run.Background = resolved.Confidence * 100 >= _settings.Homograph.Threshold
-                    ? Brushes.LightGreen
-                    : Brushes.Yellow;
-                run.BringIntoView();
+                // Update text
+                _suppressTextChanged = true;
+                TextEditor.Document.Replace(resolved.AbsolutePosition, resolved.OriginalLength, resolved.StressedWord);
+                _suppressTextChanged = false;
+
+                // Shift subsequent matches
+                int currentShift = resolved.StressedWord.Length - resolved.OriginalLength;
+                for (int j = i + 1; j < docMatches.Count; j++)
+                {
+                    docMatches[j].Start += currentShift;
+                }
+                shift += currentShift;
+                
+                // Hide from match colorizer
+                docMatches[i].Length = 0;
+
+                TextEditor.TextArea.TextView.Redraw(resolved.AbsolutePosition, resolved.Length);
+                TextEditor.ScrollToLine(TextEditor.Document.GetLineByOffset(resolved.AbsolutePosition).LineNumber);
 
                 StatusInfo.Text = $"Омографы: {i + 1}/{matches.Count} — {resolved.Reasoning}";
                 i++;
             }
-
-            // Clear backgrounds for any remaining (shouldn't happen unless cancelled)
-            for (int j = i; j < _homographRuns.Count; j++)
-                _homographRuns[j].Background = null;
 
             RebuildLowConfidenceList();
             StatusHomographCount.Text = _allHomographs.Count.ToString();
@@ -313,14 +329,6 @@ public partial class MainWindow : Window
             // Keep partial results
             RebuildLowConfidenceList();
             StatusHomographCount.Text = _allHomographs.Count.ToString();
-
-            // Clear unresolved slots
-            for (int j = _allHomographs.Count; j < _homographRuns.Count; j++)
-                _homographRuns[j].Background = null;
-
-            // Trim runs list to match resolved count
-            if (_homographRuns.Count > _allHomographs.Count)
-                _homographRuns = _homographRuns[.._allHomographs.Count];
 
             StatusInfo.Text = "Процесс прерван. Частичные результаты сохранены.";
         }
@@ -339,87 +347,26 @@ public partial class MainWindow : Window
         }
     }
 
-    private void BuildDocumentWithSlots(string text, List<HomographMatch> matches)
-    {
-        _suppressTextChanged = true;
-        var doc = new FlowDocument
-        {
-            FontFamily = new FontFamily("Segoe UI"),
-            FontSize = 14,
-            PagePadding = new Thickness(6)
-        };
-        var para = new Paragraph();
-        _homographRuns = [];
-
-        int lastPos = 0;
-        foreach (var m in matches)
-        {
-            if (m.Start > lastPos)
-                AppendTextSegments(doc, ref para, text[lastPos..m.Start]);
-
-            var run = new Run(text[m.Start..(m.Start + m.Length)])
-            {
-                Background = Brushes.LightGray
-            };
-            para.Inlines.Add(run);
-            _homographRuns.Add(run);
-            lastPos = m.Start + m.Length;
-        }
-
-        if (lastPos < text.Length)
-            AppendTextSegments(doc, ref para, text[lastPos..]);
-
-        doc.Blocks.Add(para);
-        TextEditor.Document = doc;
-        _suppressTextChanged = false;
-    }
-
     private void ShowResolvedText(string text, List<ResolvedHomograph> homographs, double threshold)
     {
         _suppressTextChanged = true;
-        var doc = new FlowDocument
-        {
-            FontFamily = new FontFamily("Segoe UI"),
-            FontSize = 14,
-            PagePadding = new Thickness(6)
-        };
-        var para = new Paragraph();
+        TextEditor.Text = text;
+        _suppressTextChanged = false;
+        
+        TextEditor.TextArea.TextView.LineTransformers.Clear();
+        _colorizer = new HomographColorizer(homographs, () => _settings.Homograph.Threshold);
+        TextEditor.TextArea.TextView.LineTransformers.Add(_colorizer);
 
         _lowConfidence.Clear();
-        _homographRuns = [];
         _currentHomographIndex = -1;
-        _highlightedRun = null;
 
-        int lastPos = 0;
         foreach (var h in homographs)
         {
-            if (h.AbsolutePosition > lastPos)
-                AppendTextSegments(doc, ref para, text[lastPos..h.AbsolutePosition]);
-
-            int end = Math.Min(h.AbsolutePosition + h.Length, text.Length);
-            var run = new Run(text[h.AbsolutePosition..end]);
-
             if (h.Confidence * 100 < threshold)
             {
-                run.Background = Brushes.Yellow;
-                _lowConfidence.Add((h, run));
+                _lowConfidence.Add(h);
             }
-            else
-            {
-                run.Background = Brushes.LightGreen;
-            }
-
-            para.Inlines.Add(run);
-            _homographRuns.Add(run);
-            lastPos = end;
         }
-
-        if (lastPos < text.Length)
-            AppendTextSegments(doc, ref para, text[lastPos..]);
-
-        doc.Blocks.Add(para);
-        TextEditor.Document = doc;
-        _suppressTextChanged = false;
 
         PrevBtn.IsEnabled = NextBtn.IsEnabled = _lowConfidence.Count > 0;
         if (_lowConfidence.Count > 0)
@@ -435,28 +382,16 @@ public partial class MainWindow : Window
 
     private void RebuildLowConfidenceList()
     {
-        if (_highlightedRun != null)
-        {
-            _highlightedRun.Background = Brushes.Yellow;
-            _highlightedRun = null;
-        }
-
         _lowConfidence.Clear();
         var threshold = _settings.Homograph.Threshold;
 
-        for (int i = 0; i < _allHomographs.Count && i < _homographRuns.Count; i++)
+        for (int i = 0; i < _allHomographs.Count; i++)
         {
             var h = _allHomographs[i];
-            var run = _homographRuns[i];
 
             if (h.Confidence * 100 < threshold)
             {
-                run.Background = Brushes.Yellow;
-                _lowConfidence.Add((h, run));
-            }
-            else
-            {
-                run.Background = Brushes.LightGreen;
+                _lowConfidence.Add(h);
             }
         }
 
@@ -471,6 +406,8 @@ public partial class MainWindow : Window
         StatusInfo.Text = _lowConfidence.Count > 0
             ? $"Низкая уверенность: {_lowConfidence.Count}"
             : _allHomographs.Count > 0 ? "Все омографы разрешены." : "";
+        
+        TextEditor.TextArea.TextView.Redraw();
     }
 
     // ── Accent dictionaries ──────────────────────────────────────────────────
@@ -505,7 +442,7 @@ public partial class MainWindow : Window
 
         if (stressMap.Count == 0)
         {
-            MessageBox.Show("Нет совпадений в словарях ударений.", "Внимание",
+            MessageBox.Show("Нет coincidences в словарях ударений.", "Внимание",
                 MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
@@ -536,13 +473,14 @@ public partial class MainWindow : Window
         if (_currentHomographIndex < 0 || _currentHomographIndex >= _lowConfidence.Count)
             return;
 
-        if (_highlightedRun != null)
-            _highlightedRun.Background = Brushes.Yellow;
-
-        var (h, run) = _lowConfidence[_currentHomographIndex];
-        run.Background = Brushes.Orange;
-        _highlightedRun = run;
-        run.BringIntoView();
+        var h = _lowConfidence[_currentHomographIndex];
+        
+        _colorizer?.SetHighlighted(h);
+        TextEditor.TextArea.TextView.Redraw();
+        
+        TextEditor.Select(h.AbsolutePosition, h.Length);
+        var line = TextEditor.Document.GetLineByOffset(h.AbsolutePosition);
+        TextEditor.ScrollToLine(line.LineNumber);
 
         HomographIndexText.Text = $"({_currentHomographIndex + 1}/{_lowConfidence.Count})";
         var variants = string.Join(" | ", h.Variants.Select(v => v.Target));
@@ -584,12 +522,16 @@ public partial class MainWindow : Window
     {
         if (_lowConfidence.Count == 0 || _currentHomographIndex < 0) return;
 
-        var (homograph, run) = _lowConfidence[_currentHomographIndex];
+        var homograph = _lowConfidence[_currentHomographIndex];
         if (homograph.Variants.Count < variantIndex) return;
 
         var variant = homograph.Variants[variantIndex - 1];
-        var oldLength = run.Text.Length;
-        run.Text = variant.Target;
+        var oldLength = homograph.Length;
+        
+        _suppressTextChanged = true;
+        TextEditor.Document.Replace(homograph.AbsolutePosition, homograph.Length, variant.Target);
+        _suppressTextChanged = false;
+        
         homograph.StressedWord = variant.Target;
         homograph.ChosenIndex = variant.Ref;
         homograph.Confidence = 1.0;
@@ -598,26 +540,25 @@ public partial class MainWindow : Window
         var delta = homograph.Length - oldLength;
         if (delta != 0) UpdateOffsets(homograph.AbsolutePosition, delta);
 
-        PromoteResolvedHomograph(homograph, run);
+        PromoteResolvedHomograph(homograph);
     }
 
     private void ConfirmCurrentVariant()
     {
         if (_lowConfidence.Count == 0 || _currentHomographIndex < 0) return;
 
-        var (homograph, run) = _lowConfidence[_currentHomographIndex];
+        var homograph = _lowConfidence[_currentHomographIndex];
         homograph.Confidence = 1.0;
 
-        PromoteResolvedHomograph(homograph, run);
+        PromoteResolvedHomograph(homograph);
     }
 
-    private void PromoteResolvedHomograph(ResolvedHomograph homograph, Run run)
+    private void PromoteResolvedHomograph(ResolvedHomograph homograph)
     {
         if (homograph.Confidence * 100 >= _settings.Homograph.Threshold)
         {
-            run.Background = Brushes.LightGreen;
             _lowConfidence.RemoveAt(_currentHomographIndex);
-            _highlightedRun = null;
+            _colorizer?.SetHighlighted(null);
 
             if (_lowConfidence.Count == 0)
             {
@@ -625,6 +566,7 @@ public partial class MainWindow : Window
                 HomographIndexText.Text = "";
                 StatusInfo.Text = "Все омографы разрешены.";
                 _currentHomographIndex = -1;
+                TextEditor.TextArea.TextView.Redraw();
                 return;
             }
 
@@ -691,10 +633,10 @@ public partial class MainWindow : Window
         if (string.IsNullOrEmpty(pattern)) return;
 
         var replacement = ReplaceTextBox.Text;
-        var selection = TextEditor.Selection;
-        if (selection.Text == pattern)
+        var selection = TextEditor.SelectedText;
+        if (selection == pattern)
         {
-            selection.Text = replacement;
+            TextEditor.SelectedText = replacement;
             ResetHomographState();
             return;
         }
@@ -714,23 +656,20 @@ public partial class MainWindow : Window
 
     private string GetSearchText()
     {
-        var range = new TextRange(TextEditor.Document.ContentStart, TextEditor.Document.ContentEnd);
-        return range.Text;
+        return TextEditor.Text ?? "";
     }
 
     private int GetCursorIndex()
     {
-        var range = new TextRange(TextEditor.Document.ContentStart, TextEditor.CaretPosition);
-        return range.Text.Length;
+        return TextEditor.CaretOffset;
     }
 
     private void SelectInText(int index, int length)
     {
-        var start = GetTextPointerAtOffset(TextEditor.Document.ContentStart, index);
-        var end = GetTextPointerAtOffset(TextEditor.Document.ContentStart, index + length);
-        TextEditor.Selection.Select(start, end);
+        TextEditor.Select(index, length);
+        var line = TextEditor.Document.GetLineByOffset(index);
+        TextEditor.ScrollToLine(line.LineNumber);
         TextEditor.Focus();
-        TextEditor.Selection.Start.Paragraph?.BringIntoView();
     }
 
     // ── Clean rules ──────────────────────────────────────────────────────────
@@ -1001,7 +940,7 @@ public partial class MainWindow : Window
         e.Handled = true;
     }
 
-    private void TextEditor_TextChanged(object sender, TextChangedEventArgs e)
+    private void TextEditor_TextChanged(object? sender, EventArgs e)
     {
         if (_suppressTextChanged) return;
         if (string.IsNullOrWhiteSpace(GetPlainText()))
@@ -1033,85 +972,27 @@ public partial class MainWindow : Window
 
     private string GetPlainText()
     {
-        var range = new TextRange(TextEditor.Document.ContentStart, TextEditor.Document.ContentEnd);
-        return range.Text.TrimEnd('\r', '\n');
+        return TextEditor.Text;
     }
 
     private void SetPlainText(string text)
     {
         _suppressTextChanged = true;
-        var doc = new FlowDocument
-        {
-            FontFamily = new FontFamily("Segoe UI"),
-            FontSize = 14,
-            PagePadding = new Thickness(6)
-        };
-        var para = new Paragraph();
-        AppendTextSegments(doc, ref para, text);
-        doc.Blocks.Add(para);
-        TextEditor.Document = doc;
+        TextEditor.Text = text;
+        TextEditor.TextArea.TextView.LineTransformers.Clear();
         _suppressTextChanged = false;
-    }
-
-    private void AppendTextSegments(FlowDocument doc, ref Paragraph para, string segment)
-    {
-        var lines = segment.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
-        for (int i = 0; i < lines.Length; i++)
-        {
-            if (i > 0)
-            {
-                doc.Blocks.Add(para);
-                para = new Paragraph();
-            }
-            if (lines[i].Length > 0)
-            {
-                para.Inlines.Add(new Run(lines[i]));
-            }
-        }
     }
 
     private void ResetHomographState()
     {
         _allHomographs = [];
-        _homographRuns = [];
         _lowConfidence.Clear();
         _currentHomographIndex = -1;
-        _highlightedRun = null;
         PrevBtn.IsEnabled = NextBtn.IsEnabled = false;
         HomographIndexText.Text = "";
         StatusHomographCount.Text = "0";
+        TextEditor.TextArea.TextView.LineTransformers.Clear();
         UpdateLlmStatusDisplay();
-    }
-
-    private static TextPointer GetTextPointerAtOffset(TextPointer start, int offset)
-    {
-        int count = 0;
-        var nav = start;
-        while (nav != null)
-        {
-            var ctx = nav.GetPointerContext(LogicalDirection.Forward);
-            if (ctx == TextPointerContext.Text)
-            {
-                var run = nav.GetTextInRun(LogicalDirection.Forward);
-                if (count + run.Length >= offset)
-                    return nav.GetPositionAtOffset(offset - count) ?? nav;
-                count += run.Length;
-                nav = nav.GetPositionAtOffset(run.Length);
-            }
-            else if (ctx == TextPointerContext.ElementEnd && nav.Parent is Paragraph)
-            {
-                int nl = Environment.NewLine.Length;
-                if (count + nl >= offset)
-                    return nav.GetNextInsertionPosition(LogicalDirection.Forward) ?? nav;
-                count += nl;
-                nav = nav.GetNextContextPosition(LogicalDirection.Forward);
-            }
-            else
-            {
-                nav = nav.GetNextContextPosition(LogicalDirection.Forward);
-            }
-        }
-        return start;
     }
 
     private static string ResolvePath(string path)
