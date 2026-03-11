@@ -355,7 +355,7 @@ public partial class MainWindow : Window
         foreach (var m in matches)
         {
             if (m.Start > lastPos)
-                para.Inlines.Add(new Run(text[lastPos..m.Start]));
+                AppendTextSegments(doc, ref para, text[lastPos..m.Start]);
 
             var run = new Run(text[m.Start..(m.Start + m.Length)])
             {
@@ -367,7 +367,7 @@ public partial class MainWindow : Window
         }
 
         if (lastPos < text.Length)
-            para.Inlines.Add(new Run(text[lastPos..]));
+            AppendTextSegments(doc, ref para, text[lastPos..]);
 
         doc.Blocks.Add(para);
         TextEditor.Document = doc;
@@ -394,7 +394,7 @@ public partial class MainWindow : Window
         foreach (var h in homographs)
         {
             if (h.AbsolutePosition > lastPos)
-                para.Inlines.Add(new Run(text[lastPos..h.AbsolutePosition]));
+                AppendTextSegments(doc, ref para, text[lastPos..h.AbsolutePosition]);
 
             int end = Math.Min(h.AbsolutePosition + h.Length, text.Length);
             var run = new Run(text[h.AbsolutePosition..end]);
@@ -415,7 +415,7 @@ public partial class MainWindow : Window
         }
 
         if (lastPos < text.Length)
-            para.Inlines.Add(new Run(text[lastPos..]));
+            AppendTextSegments(doc, ref para, text[lastPos..]);
 
         doc.Blocks.Add(para);
         TextEditor.Document = doc;
@@ -1003,18 +1003,9 @@ public partial class MainWindow : Window
 
     private void TextEditor_TextChanged(object sender, TextChangedEventArgs e)
     {
-        UpdatePlaceholder();
         if (_suppressTextChanged) return;
         if (string.IsNullOrWhiteSpace(GetPlainText()))
             ResetHomographState();
-    }
-
-    private void UpdatePlaceholder()
-    {
-        var text = GetPlainText();
-        PlaceholderText.Visibility = string.IsNullOrWhiteSpace(text)
-            ? Visibility.Visible
-            : Visibility.Collapsed;
     }
 
     // ── Cancel ───────────────────────────────────────────────────────────────
@@ -1055,10 +1046,28 @@ public partial class MainWindow : Window
             FontSize = 14,
             PagePadding = new Thickness(6)
         };
-        doc.Blocks.Add(new Paragraph(new Run(text)));
+        var para = new Paragraph();
+        AppendTextSegments(doc, ref para, text);
+        doc.Blocks.Add(para);
         TextEditor.Document = doc;
         _suppressTextChanged = false;
-        UpdatePlaceholder();
+    }
+
+    private void AppendTextSegments(FlowDocument doc, ref Paragraph para, string segment)
+    {
+        var lines = segment.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
+        for (int i = 0; i < lines.Length; i++)
+        {
+            if (i > 0)
+            {
+                doc.Blocks.Add(para);
+                para = new Paragraph();
+            }
+            if (lines[i].Length > 0)
+            {
+                para.Inlines.Add(new Run(lines[i]));
+            }
+        }
     }
 
     private void ResetHomographState()

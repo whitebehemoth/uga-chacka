@@ -161,14 +161,9 @@
                                      HorizontalScrollBarVisibility="Auto"
                                      FontSize="14" FontFamily="Segoe UI"
                                      Padding="6" AcceptsTab="True"
+                                     SpellCheck.IsEnabled="False"
                                      TextChanged="TextEditor_TextChanged"
                                      PreviewMouseWheel="Text_PreviewMouseWheel"/>
-                        <TextBlock x:Name="PlaceholderText"
-                                   IsHitTestVisible="False"
-                                   Foreground="Gray" FontSize="14" FontFamily="Segoe UI"
-                                   VerticalAlignment="Top" Margin="12,8"
-                                   TextWrapping="Wrap"
-                                   Text="Откройте файл (Ctrl+O) или вставьте текст для начала работы.&#x0a;Далее: Обработка текста → Ударения в омографы.&#x0a;Навигация: Alt+S / Alt+W, выбор варианта: Alt+цифра, подтвердить: Alt+`"/>
                     </Grid>
                 </Grid>
             </TabItem>
