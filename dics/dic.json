@@ -133477,54 +133477,19 @@
   ],
   "тому": [
     {
-      "target": "т+ому",
+      "target": "том+у",
       "ref": "сч",
       "gram_def": [
-        "мест сущ ед ср дат"
+        "местоимение"
       ],
       "frequency": 7800,
       "lemma": "тот",
-      "stress_pos": 2,
-      "lemma_def": []
-    },
-    {
-      "target": "том+у",
-      "ref": "оч",
-      "gram_def": [
-        "мест прл ед муж дат",
-        "мест прл ед ср дат",
-        "мест сущ ед муж дат"
-      ],
-      "frequency": 7800,
-      "lemma": "тот",
-      "stress_pos": 4,
-      "lemma_def": []
-    },
-    {
-      "target": "том+у",
-      "ref": "мч",
-      "gram_def": [
-        "мест сущ ед ср дат"
-      ],
-      "frequency": 6600,
-      "lemma": "то",
-      "stress_pos": 4,
-      "lemma_def": []
-    },
-    {
-      "target": "том+у",
-      "ref": "ср",
-      "gram_def": [
-        "сущ одуш ед муж дат"
-      ],
-      "frequency": 3100,
-      "lemma": "*тот",
       "stress_pos": 4,
       "lemma_def": []
     },
     {
       "target": "т+ому",
-      "ref": "ор",
+      "ref": "оч",
       "gram_def": [
         "сущ неод ед муж дат"
       ],
@@ -149905,10 +149870,10 @@
       "target": "всём",
       "ref": "сч",
       "gram_def": [
-        "мест сущ ед ср пр"
+        "мест сущ"
       ],
       "frequency": 1,
-      "lemma": "все",
+      "lemma": "всё",
       "stress_pos": 2,
       "lemma_def": []
     },
@@ -149916,7 +149881,7 @@
       "target": "всем",
       "ref": "оч",
       "gram_def": [
-        "мест прл ед муж тв"
+        "мест прл"
       ],
       "frequency": 5,
       "lemma": "весь",

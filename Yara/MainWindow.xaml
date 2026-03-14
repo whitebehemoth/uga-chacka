@@ -296,6 +296,13 @@
                                         Minimum="8" Maximum="36"
                                         TickFrequency="2" IsSnapToTickEnabled="True"
                                         TickPlacement="BottomRight" Margin="0,0,0,20"/>
+                                <TextBlock Text="Куда сохранять модифицированные тексты" Margin="0,0,0,4"/>
+                                <DockPanel Margin="0,0,0,8">
+                                    <Button DockPanel.Dock="Right" Content="…" Width="32"
+                                 Margin="4,0,0,0" Click="BrowseTargetFolder_Click"/>
+                                    <TextBox x:Name="TargetFolder"
+                                  Text="{Binding General.TargetFolder, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                </DockPanel>
                             </StackPanel>
                         </ScrollViewer>
                     </TabItem>

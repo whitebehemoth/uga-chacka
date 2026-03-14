@@ -8,9 +8,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
 using Microsoft.Extensions.Options;
 using Microsoft.Win32;
 using WhiteBehemoth.Resolver;
@@ -149,6 +147,8 @@ public partial class MainWindow : Window
 
     private void Save_Click(object sender, ExecutedRoutedEventArgs e)
     {
+
+        string tarrget;
         if (_currentFilePath == null)
         {
             var dlg = new SaveFileDialog
@@ -157,9 +157,17 @@ public partial class MainWindow : Window
                 Filter = "Текстовые файлы (*.txt)|*.txt|Все файлы (*.*)|*.*"
             };
             if (dlg.ShowDialog() != true) return;
-            _currentFilePath = dlg.FileName;
+            tarrget = dlg.FileName;
         }
-        File.WriteAllText(_currentFilePath, GetPlainText(), Encoding.UTF8);
+        else
+        {
+            if (!Directory.Exists(_settings.General.TargetFolder))
+            {
+                Directory.CreateDirectory(_settings.General.TargetFolder);
+            }
+            tarrget = Path.Combine(_settings.General.TargetFolder, Path.GetFileName(_currentFilePath));
+        }
+        File.WriteAllText(tarrget, GetPlainText(), Encoding.UTF8);
     }
 
     private void Exit_Click(object sender, RoutedEventArgs e) => Close();
@@ -898,7 +906,15 @@ public partial class MainWindow : Window
         var dlg = new OpenFileDialog { Title = "Словарь ударений", Filter = "JSON (*.json)|*.json" };
         if (dlg.ShowDialog() == true) DicAPath.Text += (Environment.NewLine + dlg.FileName);
     }
-
+    private void BrowseTargetFolder_Click(object sender, RoutedEventArgs e)
+    {
+        using var dlg = new System.Windows.Forms.FolderBrowserDialog();
+        if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+        {
+            TargetFolder.Text = dlg.SelectedPath;
+        }
+    }
+    
     private void BrowseCleanRegex_Click(object sender, RoutedEventArgs e)
     {
         var dlg = new OpenFileDialog
