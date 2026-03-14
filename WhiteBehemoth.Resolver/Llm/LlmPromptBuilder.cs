@@ -13,12 +13,13 @@ public static class LlmPromptBuilder
         sb.AppendLine($"Слово-омограф: \"{word}\"");
         sb.AppendLine();
         sb.AppendLine("Варианты:");
-        foreach (var v in variants)
+        foreach (var v in variants.GroupBy(v => v.Target))
         {
-            sb.Append($"{v.Ref}.");
-            sb.Append($" — грамматика: {string.Join("; ", v.GramDef)}");
-            if (v.LemmatDef.Count > 0)
-                sb.Append($" — значение леммы: {string.Join("; ", v.LemmatDef)}");
+            sb.Append($"ref: [{v.Key}]");
+            sb.Append($" - лемма: {v.Select(v => v.Lemma).Aggregate((a, b) => a + "; " + b)}");
+            sb.Append($" - грамматика: {v.SelectMany(v => v.GramDef).Aggregate((a, b) => a + "; " + b)}");
+            if (v.SelectMany(v => v.LemmatDef).Any())
+                sb.Append($" - значение леммы: {v.SelectMany(v => v.LemmatDef).Aggregate((a, b) => a + "; " + b)}");
             sb.AppendLine();
         }
         sb.AppendLine();

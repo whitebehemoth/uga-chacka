@@ -9,6 +9,7 @@ using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using ICSharpCode.AvalonEdit.Document;
 using Microsoft.Extensions.Options;
 using Microsoft.Win32;
 using WhiteBehemoth.Resolver;
@@ -54,6 +55,9 @@ public partial class MainWindow : Window
 
     private void Window_Loaded(object sender, RoutedEventArgs e)
     {
+        if (TextEditor.Document != null)
+            TextEditor.Document.Changed += TextDocument_Changed;
+
         // OpenAI configs
         _openAiConfigs = new ObservableCollection<OpenAiEndpoint>(_settings.Llm.OpenAiEndpoints);
         ActiveOpenAiConfig.ItemsSource = _openAiConfigs;
@@ -482,12 +486,31 @@ public partial class MainWindow : Window
             return;
 
         var h = _lowConfidence[_currentHomographIndex];
+        if (!TryAlignHomographPosition(h))
+        {
+            var result = MessageBox.Show(
+                "Не удалось сопоставить текущий омограф с ожидаемыми вариантами.\n" +
+                "Навигация сбита из-за изменений текста.\n\n" +
+                "Удалить выделение омографов?",
+                "Навигация сбита",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning);
+
+            if (result == MessageBoxResult.Yes)
+                ResetHomographState();
+
+            return;
+        }
         
         _colorizer?.SetHighlighted(h);
         TextEditor.TextArea.TextView.Redraw();
         
-        TextEditor.Select(h.AbsolutePosition, h.Length);
-        var line = TextEditor.Document.GetLineByOffset(h.AbsolutePosition);
+        int selectStart = Math.Clamp(h.AbsolutePosition, 0, TextEditor.Document.TextLength);
+        int maxLength = TextEditor.Document.TextLength - selectStart;
+        int selectLength = Math.Clamp(h.Length, 0, maxLength);
+
+        TextEditor.Select(selectStart, selectLength);
+        var line = TextEditor.Document.GetLineByOffset(selectStart);
         TextEditor.ScrollToLine(line.LineNumber);
 
         HomographIndexText.Text = $"({_currentHomographIndex + 1}/{_lowConfidence.Count})";
@@ -963,6 +986,35 @@ public partial class MainWindow : Window
             ResetHomographState();
     }
 
+    private void TextDocument_Changed(object? sender, DocumentChangeEventArgs e)
+    {
+        if (_suppressTextChanged || _allHomographs.Count == 0) return;
+
+        int delta = e.InsertionLength - e.RemovalLength;
+        if (delta == 0 && e.RemovalLength == 0) return;
+
+        int changeStart = e.Offset;
+        int changeEnd = e.Offset + e.RemovalLength;
+
+        foreach (var h in _allHomographs)
+        {
+            int hStart = h.AbsolutePosition;
+            int hEnd = hStart + h.Length;
+
+            if (hEnd <= changeStart)
+                continue;
+
+            if (hStart >= changeEnd)
+            {
+                h.AbsolutePosition += delta;
+                continue;
+            }
+
+            h.AbsolutePosition = Math.Min(hStart, changeStart);
+            h.Length = Math.Max(0, h.Length + delta);
+        }
+    }
+
     // ── Cancel ───────────────────────────────────────────────────────────────
 
     private void CancelBtn_Click(object sender, RoutedEventArgs e)
@@ -1009,6 +1061,87 @@ public partial class MainWindow : Window
         StatusHomographCount.Text = "0";
         TextEditor.TextArea.TextView.LineTransformers.Clear();
         UpdateLlmStatusDisplay();
+    }
+
+    private bool TryAlignHomographPosition(ResolvedHomograph homograph)
+    {
+        string text = GetPlainText();
+        if (string.IsNullOrEmpty(text))
+            return false;
+
+        var expected = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (!string.IsNullOrWhiteSpace(homograph.StressedWord))
+            expected.Add(homograph.StressedWord);
+
+        foreach (var variant in homograph.Variants)
+        {
+            if (!string.IsNullOrWhiteSpace(variant.Target))
+                expected.Add(variant.Target);
+        }
+
+        if (expected.Count == 0)
+            return false;
+
+        if (TryMatchAt(homograph.AbsolutePosition, expected, text, out int matchedLength))
+        {
+            homograph.Length = matchedLength;
+            return true;
+        }
+
+        const int searchRadius = 200;
+        int from = Math.Max(0, homograph.AbsolutePosition - searchRadius);
+        int to = Math.Min(text.Length, homograph.AbsolutePosition + searchRadius);
+        int bestIndex = -1;
+        int bestLength = 0;
+        int bestDistance = int.MaxValue;
+
+        foreach (var token in expected)
+        {
+            int index = from;
+            while (index < to)
+            {
+                int found = text.IndexOf(token, index, to - index, StringComparison.OrdinalIgnoreCase);
+                if (found < 0) break;
+
+                int distance = Math.Abs(found - homograph.AbsolutePosition);
+                if (distance < bestDistance)
+                {
+                    bestDistance = distance;
+                    bestIndex = found;
+                    bestLength = token.Length;
+                }
+
+                index = found + 1;
+            }
+        }
+
+        if (bestIndex < 0)
+            return false;
+
+        homograph.AbsolutePosition = bestIndex;
+        homograph.Length = bestLength;
+        return true;
+    }
+
+    private static bool TryMatchAt(int position, HashSet<string> expected, string text, out int matchedLength)
+    {
+        matchedLength = 0;
+        if (position < 0 || position >= text.Length)
+            return false;
+
+        foreach (var token in expected)
+        {
+            if (position + token.Length > text.Length)
+                continue;
+
+            if (string.Compare(text, position, token, 0, token.Length, StringComparison.OrdinalIgnoreCase) == 0)
+            {
+                matchedLength = token.Length;
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static string ResolvePath(string path)

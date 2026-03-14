@@ -47,13 +47,16 @@ public static class ResolutionService
                     }
                     else
                     {
-                        choice = new LlmChoice() { Reasoning = "Ошибка LLM", Confidence = 0, Ref = "cч" };
+                        choice = new LlmChoice() { Reasoning = "Ошибка LLM", Confidence = 0, Ref = "<error>" };
                     }
                 }
             }
 
-            var chosen = match.Variants.FirstOrDefault(v => v.Ref == choice.Ref)
-                         ?? match.Variants[0];
+            var chosen = match.Variants.FirstOrDefault(v => choice.Ref.Contains(v.Target) && choice.Lemma.Contains(v.Lemma));
+            if (chosen == null)
+            {
+                chosen  = match.Variants[0];
+            }
 
             yield return new ResolvedHomograph
             {

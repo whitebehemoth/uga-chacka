@@ -7,6 +7,9 @@ namespace WhiteBehemoth.Resolver.Models
         [JsonPropertyName("ref")]
         public string Ref { get; set; } = "";
 
+        [JsonPropertyName("lemma")]
+        public string Lemma { get; set; } = "";
+
         [JsonPropertyName("confidence")]
         public double Confidence { get; set; }
 
