@@ -29,6 +29,22 @@ public class LlmConfig : INotifyPropertyChanged
         set { if (field != value) { field = value; OnPropertyChanged(); } }
     }
 
+    public string SentenceStressSystemPrompt
+    {
+        get => field ?? "";
+        set { if (field != value) { field = value; OnPropertyChanged(); } }
+    }
+
+    public int MaxParallelRequests
+    {
+        get => field <= 0 ? 1 : field;
+        set
+        {
+            var normalized = value <= 0 ? 1 : value;
+            if (field != normalized) { field = normalized; OnPropertyChanged(); }
+        }
+    }
+
     public List<string> KnownFoundryModels
     {
         get => field ?? [];

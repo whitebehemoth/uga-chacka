@@ -299,7 +299,11 @@ public partial class MainWindow : Window
             int i = 0;
 
             await foreach (var resolved in ResolutionService.ResolveAsync(
-                matches, llmClient, OnLlmError, _resolutionCts.Token))
+                matches,
+                llmClient,
+                OnLlmError,
+                _settings.Llm.MaxParallelRequests,
+                _resolutionCts.Token))
             {
                 resolved.AbsolutePosition = resolved.OriginalPosition + shift;
                 resolved.Length = resolved.StressedWord.Length;

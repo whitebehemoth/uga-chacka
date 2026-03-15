@@ -7,5 +7,7 @@ public sealed record LlmSettings(
     string ApiKey = "",
     string FoundryModel = "",
     double Temperature = 0.3,
-    string SystemPrompt = ""
+    string SystemPrompt = "",
+    string SentenceStressSystemPrompt = "",
+    int MaxParallelRequests = 1
 );

@@ -18,24 +18,23 @@ public sealed class FoundryLocalLlmClient : IFoundryLocalLlmClient
         _getSettings = getSettings;
     }
 
+    public async Task<string> ResolveSentenceStressAsync(string context, CancellationToken ct = default)
+    {
+        var settings = _getSettings();
+        var userPrompt = LlmPromptBuilder.BuildSentenceStressPrompt(context);
+        var content = await CompleteChatAsync(settings.SentenceStressSystemPrompt, userPrompt, ct);
+        return content.Trim();
+    }
+
     public async Task<LlmChoice> ResolveHomographAsync(
         string context, string word, List<HomographVariant> variants,
         CancellationToken ct = default)
     {
         var settings = _getSettings();
         var userPrompt = LlmPromptBuilder.BuildUserPrompt(context, word, variants);
-        var chatClient = await GetChatClientAsync(ct);
-
-        chatClient.Settings.Temperature = (float)settings.Temperature;
-
-        var response = await chatClient.CompleteChatAsync(new[]
-        {
-            ChatMessage.FromSystem(settings.SystemPrompt),
-            ChatMessage.FromUser(userPrompt)
-        });
+        var content = await CompleteChatAsync(settings.SystemPrompt, userPrompt, ct);
         try
         {
-            var content = response.Choices?[0].Message.Content;
             var jsonStart = content!.IndexOf('{');
             var jsonEnd = content.LastIndexOf('}');
             var jsonStr = content[jsonStart..(jsonEnd + 1)];
@@ -48,6 +47,22 @@ public sealed class FoundryLocalLlmClient : IFoundryLocalLlmClient
         }
 
 
+    }
+
+    private async Task<string> CompleteChatAsync(string systemPrompt, string userPrompt, CancellationToken ct)
+    {
+        var settings = _getSettings();
+        var chatClient = await GetChatClientAsync(ct);
+
+        chatClient.Settings.Temperature = (float)settings.Temperature;
+
+        var response = await chatClient.CompleteChatAsync(new[]
+        {
+            ChatMessage.FromSystem(systemPrompt),
+            ChatMessage.FromUser(userPrompt)
+        });
+
+        return response.Choices?[0].Message.Content ?? string.Empty;
     }
 
     public async Task<ModelInfo?> GetSelectedModelInfoAsync(CancellationToken ct = default)

@@ -8,7 +8,7 @@ public static partial class TextAnalyzer
     [GeneratedRegex(@"[а-яА-ЯёЁ]+")]
     public static partial Regex WordRegex();
 
-    [GeneratedRegex(@"[.!?…]+")]
+    [GeneratedRegex(@"[.!?…]+|\r?\n")]
     private static partial Regex SentenceEndRegex();
 
     public static List<HomographMatch> FindHomographs(string text, HomographDictionary dictionary)
@@ -34,6 +34,8 @@ public static partial class TextAnalyzer
             {
                 Start = m.Index,
                 Length = m.Length,
+                SentenceStart = sentStart,
+                SentenceEnd = sentEnd,
                 Word = m.Value,
                 Variants = variants,
                 SentenceContext = context
@@ -53,7 +55,8 @@ public static partial class TextAnalyzer
         foreach (Match m in SentenceEndRegex().Matches(text))
         {
             int end = m.Index + m.Length;
-            if (end >= text.Length || char.IsWhiteSpace(text[end]))
+            bool isLineEnd = m.Value.Contains('\n') || m.Value.Contains('\r');
+            if (isLineEnd || end >= text.Length || char.IsWhiteSpace(text[end]))
                 count++;
         }
 
@@ -79,7 +82,8 @@ public static partial class TextAnalyzer
         foreach (Match m in SentenceEndRegex().Matches(text))
         {
             int end = m.Index + m.Length;
-            if (end >= text.Length || char.IsWhiteSpace(text[end]))
+            bool isLineEnd = m.Value.Contains('\n') || m.Value.Contains('\r');
+            if (isLineEnd || end >= text.Length || char.IsWhiteSpace(text[end]))
             {
                 sentences.Add((start, end));
                 start = end;

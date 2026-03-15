@@ -5,6 +5,13 @@ namespace WhiteBehemoth.Resolver.Llm;
 
 public static class LlmPromptBuilder
 {
+    public static string BuildSentenceStressPrompt(string context)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine($"Предложение: \"{context}\"");
+        return sb.ToString();
+    }
+
     public static string BuildUserPrompt(
         string context, string word, List<HomographVariant> variants)
     {
