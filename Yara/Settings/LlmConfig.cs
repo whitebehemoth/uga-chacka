@@ -29,12 +29,12 @@ public class LlmConfig : INotifyPropertyChanged
         set { if (field != value) { field = value; OnPropertyChanged(); } }
     }
 
-    public int MaxParallelRequests
+    public int NextRequestInMs
     {
-        get => field <= 0 ? 1 : field;
+        get => field <= 0 ? 500 : field;
         set
         {
-            var normalized = value <= 0 ? 1 : value;
+            var normalized = value <= 0 ? 500 : value;
             if (field != normalized) { field = normalized; OnPropertyChanged(); }
         }
     }

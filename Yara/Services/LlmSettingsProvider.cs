@@ -22,7 +22,7 @@ public sealed class LlmSettingsProvider(IOptionsMonitor<AppSettings> appSettings
                 FoundryModel: provider[8..],
                 Temperature: llm.Temperature,
                 SystemPrompt: llm.SystemPrompt,
-                MaxParallelRequests: llm.MaxParallelRequests);
+                NextRequestInMs: llm.NextRequestInMs);
 
         int idx = 0;
         if (provider.StartsWith("openai:") && int.TryParse(provider[7..], out var parsed))
@@ -38,12 +38,12 @@ public sealed class LlmSettingsProvider(IOptionsMonitor<AppSettings> appSettings
                 ApiKey: ep.ApiKey,
                 Temperature: llm.Temperature,
                 SystemPrompt: llm.SystemPrompt,
-                MaxParallelRequests: llm.MaxParallelRequests);
+                NextRequestInMs: llm.NextRequestInMs);
         }
 
         return new LlmSettings(
             Temperature: llm.Temperature,
             SystemPrompt: llm.SystemPrompt,
-            MaxParallelRequests: llm.MaxParallelRequests);
+            NextRequestInMs: llm.NextRequestInMs);
     }
 }

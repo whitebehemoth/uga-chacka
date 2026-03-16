@@ -8,5 +8,5 @@ public sealed record LlmSettings(
     string FoundryModel = "",
     double Temperature = 0.3,
     string SystemPrompt = "",
-    int MaxParallelRequests = 1
+    int NextRequestInMs = 500
 );

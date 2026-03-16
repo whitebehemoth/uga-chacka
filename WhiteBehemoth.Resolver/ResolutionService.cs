@@ -14,14 +14,13 @@ public static class ResolutionService
         List<HomographMatch> matches,
         ILlmClient llmClient,
         Func<int, int, Task<bool>> onLlmError,
-        int maxParallelRequests = 1,
+        int nextRequestInMs = 500,
         [EnumeratorCancellation] CancellationToken ct = default)
     {
-        for (int i = 0; i < matches.Count; i++)
-        {
-            ct.ThrowIfCancellationRequested();
-            var match = matches[i];
+        var runningTasks = new Task<ResolvedHomograph>[matches.Count];
 
+        async Task<ResolvedHomograph> ResolveSingleAsync(HomographMatch match, int index)
+        {
             LlmChoice choice;
             try
             {
@@ -42,7 +41,7 @@ public static class ResolutionService
                 catch
                 {
                     // Second failure → ask user
-                    if (!await onLlmError(i + 1, matches.Count))
+                    if (!await onLlmError(index + 1, matches.Count))
                     {
                         throw new OperationCanceledException();
                     }
@@ -59,7 +58,7 @@ public static class ResolutionService
                 chosen = match.Variants[0];
             }
 
-            yield return new ResolvedHomograph
+            return new ResolvedHomograph
             {
                 OriginalWord = match.Word,
                 StressedWord = chosen.Target,
@@ -70,6 +69,23 @@ public static class ResolutionService
                 OriginalLength = match.Length,
                 Variants = match.Variants.OrderBy(v => v.Target.IndexOf('+')).ToList()
             };
+        }
+
+        for (int i = 0; i < matches.Count; i++)
+        {
+            ct.ThrowIfCancellationRequested();
+            runningTasks[i] = ResolveSingleAsync(matches[i], i);
+
+            if (i < matches.Count - 1 && nextRequestInMs > 0)
+            {
+                await Task.Delay(nextRequestInMs, ct);
+            }
+        }
+
+        for (int i = 0; i < runningTasks.Length; i++)
+        {
+            ct.ThrowIfCancellationRequested();
+            yield return await runningTasks[i];
         }
     }
 }

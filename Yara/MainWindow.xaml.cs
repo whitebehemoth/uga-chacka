@@ -302,7 +302,7 @@ public partial class MainWindow : Window
                 matches,
                 llmClient,
                 OnLlmError,
-                _settings.Llm.MaxParallelRequests,
+                _settings.Llm.NextRequestInMs,
                 _resolutionCts.Token))
             {
                 resolved.AbsolutePosition = resolved.OriginalPosition + shift;
