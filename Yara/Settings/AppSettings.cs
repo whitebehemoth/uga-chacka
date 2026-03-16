@@ -5,7 +5,7 @@ using System.Text.Json;
 
 namespace WhiteBehemoth.Yara.Settings;
 
-public class AppSettings : INotifyPropertyChanged, IDisposable
+public sealed class AppSettings : INotifyPropertyChanged, IDisposable
 {
     private Timer? _saveTimer;
     private const int SaveDelayMs = 500;
@@ -71,10 +71,9 @@ public class AppSettings : INotifyPropertyChanged, IDisposable
         if (_disposed) return;
         _saveTimer?.Dispose();
         _disposed = true;
-        GC.SuppressFinalize(this);
     }
 
-    protected void OnPropertyChanged([CallerMemberName] string? name = null)
+    private void OnPropertyChanged([CallerMemberName] string? name = null)
         => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
     private void ScheduleSave()

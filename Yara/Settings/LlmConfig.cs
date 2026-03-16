@@ -29,12 +29,6 @@ public class LlmConfig : INotifyPropertyChanged
         set { if (field != value) { field = value; OnPropertyChanged(); } }
     }
 
-    public string SentenceStressSystemPrompt
-    {
-        get => field ?? "";
-        set { if (field != value) { field = value; OnPropertyChanged(); } }
-    }
-
     public int MaxParallelRequests
     {
         get => field <= 0 ? 1 : field;

@@ -22,7 +22,6 @@ public sealed class LlmSettingsProvider(IOptionsMonitor<AppSettings> appSettings
                 FoundryModel: provider[8..],
                 Temperature: llm.Temperature,
                 SystemPrompt: llm.SystemPrompt,
-                SentenceStressSystemPrompt: llm.SentenceStressSystemPrompt,
                 MaxParallelRequests: llm.MaxParallelRequests);
 
         int idx = 0;
@@ -39,14 +38,12 @@ public sealed class LlmSettingsProvider(IOptionsMonitor<AppSettings> appSettings
                 ApiKey: ep.ApiKey,
                 Temperature: llm.Temperature,
                 SystemPrompt: llm.SystemPrompt,
-                SentenceStressSystemPrompt: llm.SentenceStressSystemPrompt,
                 MaxParallelRequests: llm.MaxParallelRequests);
         }
 
         return new LlmSettings(
             Temperature: llm.Temperature,
             SystemPrompt: llm.SystemPrompt,
-            SentenceStressSystemPrompt: llm.SentenceStressSystemPrompt,
             MaxParallelRequests: llm.MaxParallelRequests);
     }
 }

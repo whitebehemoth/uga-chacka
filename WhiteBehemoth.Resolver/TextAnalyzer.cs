@@ -34,8 +34,6 @@ public static partial class TextAnalyzer
             {
                 Start = m.Index,
                 Length = m.Length,
-                SentenceStart = sentStart,
-                SentenceEnd = sentEnd,
                 Word = m.Value,
                 Variants = variants,
                 SentenceContext = context

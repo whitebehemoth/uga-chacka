@@ -19650,84 +19650,6 @@
       "lemma_def": []
     }
   ],
-  "деньгам": [
-    {
-      "target": "д+еньгам",
-      "ref": "сч",
-      "gram_def": [
-        "сущ неод мн дат"
-      ],
-      "frequency": 410,
-      "lemma": "деньги",
-      "stress_pos": 2,
-      "lemma_def": []
-    },
-    {
-      "target": "деньг+ам",
-      "ref": "оч",
-      "gram_def": [
-        "сущ неод мн дат"
-      ],
-      "frequency": 2,
-      "lemma": "деньга",
-      "stress_pos": 6,
-      "lemma_def": [
-        "простореч., собир.: деньги"
-      ]
-    }
-  ],
-  "деньгами": [
-    {
-      "target": "д+еньгами",
-      "ref": "сч",
-      "gram_def": [
-        "сущ неод мн тв"
-      ],
-      "frequency": 410,
-      "lemma": "деньги",
-      "stress_pos": 2,
-      "lemma_def": []
-    },
-    {
-      "target": "деньг+ами",
-      "ref": "оч",
-      "gram_def": [
-        "сущ неод мн тв"
-      ],
-      "frequency": 2,
-      "lemma": "деньга",
-      "stress_pos": 6,
-      "lemma_def": [
-        "простореч., собир.: деньги"
-      ]
-    }
-  ],
-  "деньгах": [
-    {
-      "target": "д+еньгах",
-      "ref": "сч",
-      "gram_def": [
-        "сущ неод мн пр"
-      ],
-      "frequency": 410,
-      "lemma": "деньги",
-      "stress_pos": 2,
-      "lemma_def": []
-    },
-    {
-      "target": "деньг+ах",
-      "ref": "оч",
-      "gram_def": [
-        "сущ неод мн пр"
-      ],
-      "frequency": 2,
-      "lemma": "деньга",
-      "stress_pos": 6,
-      "lemma_def": [
-        "простореч., собир.: деньги"
-      ]
-    }
-  ],
   "деньги": [
     {
       "target": "д+еньги",
@@ -68756,41 +68678,6 @@
       ],
       "frequency": 5,
       "lemma": "папаха",
-      "stress_pos": 4,
-      "lemma_def": []
-    }
-  ],
-  "пара": [
-    {
-      "target": "п+ара",
-      "ref": "сч",
-      "gram_def": [
-        "сущ неод ед муж род"
-      ],
-      "frequency": 120,
-      "lemma": "пар",
-      "stress_pos": 2,
-      "lemma_def": []
-    },
-    {
-      "target": "п+ара",
-      "ref": "оч",
-      "gram_def": [
-        "сущ неод ед жен им"
-      ],
-      "frequency": 120,
-      "lemma": "пара",
-      "stress_pos": 2,
-      "lemma_def": []
-    },
-    {
-      "target": "пар+а",
-      "ref": "мч",
-      "gram_def": [
-        "сущ неод ед жен им"
-      ],
-      "frequency": 120,
-      "lemma": "пара",
       "stress_pos": 4,
       "lemma_def": []
     }
