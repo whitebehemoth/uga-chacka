@@ -306,6 +306,8 @@ public partial class MainWindow : Window
                 _resolutionCts.Token))
             {
                 resolved.AbsolutePosition = resolved.OriginalPosition + shift;
+                var originalWord = TextEditor.Document.GetText(resolved.AbsolutePosition, resolved.OriginalLength);
+                resolved.StressedWord = PreserveFirstLetterCase(originalWord, resolved.StressedWord);
                 resolved.Length = resolved.StressedWord.Length;
 
                 _allHomographs.Add(resolved);
@@ -532,6 +534,25 @@ public partial class MainWindow : Window
         var key = e.Key == Key.System ? e.SystemKey : e.Key;
         if (key is Key.LeftAlt or Key.RightAlt) return;
 
+        if (FindReplaceBar.Visibility == Visibility.Visible && FindReplaceBar.IsKeyboardFocusWithin)
+        {
+            switch (key)
+            {
+                case Key.E:
+                    RegexCheckBox.IsChecked = RegexCheckBox.IsChecked != true;
+                    e.Handled = true;
+                    return;
+                case Key.W:
+                    WholeWordCheckBox.IsChecked = WholeWordCheckBox.IsChecked != true;
+                    e.Handled = true;
+                    return;
+                case Key.C:
+                    MatchCaseCheckBox.IsChecked = MatchCaseCheckBox.IsChecked != true;
+                    e.Handled = true;
+                    return;
+            }
+        }
+
         switch (key)
         {
             case Key.S:
@@ -649,17 +670,32 @@ public partial class MainWindow : Window
         var pattern = FindTextBox.Text;
         if (string.IsNullOrEmpty(pattern)) return;
 
+        Regex searchRegex;
+        try
+        {
+            searchRegex = CreateFindRegex(pattern);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Ошибка шаблона поиска:\n{ex.Message}", "Поиск",
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
         var text = GetSearchText();
         int startIndex = GetCursorIndex();
-        int index = text.IndexOf(pattern, startIndex, StringComparison.CurrentCulture);
-        if (index < 0)
+        var match = searchRegex.Match(text, startIndex);
+        if (!match.Success && startIndex > 0)
+            match = searchRegex.Match(text, 0);
+
+        if (!match.Success)
         {
             MessageBox.Show("Совпадения не найдены.", "Поиск",
                 MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
-        SelectInText(index, pattern.Length);
+        SelectInText(match.Index, match.Length);
     }
 
     private void ReplaceNext_Click(object sender, RoutedEventArgs e)
@@ -667,26 +703,123 @@ public partial class MainWindow : Window
         var pattern = FindTextBox.Text;
         if (string.IsNullOrEmpty(pattern)) return;
 
+        Regex searchRegex;
+        try
+        {
+            searchRegex = CreateFindRegex(pattern);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Ошибка шаблона поиска:\n{ex.Message}", "Замена",
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
         var replacement = ReplaceTextBox.Text;
         var selection = TextEditor.SelectedText;
-        if (selection == pattern)
+        var selectedMatch = searchRegex.Match(selection);
+        if (!string.IsNullOrEmpty(selection) && selectedMatch.Success && selectedMatch.Index == 0 && selectedMatch.Length == selection.Length)
         {
-            TextEditor.SelectedText = replacement;
+            TextEditor.SelectedText = selectedMatch.Result(replacement);
             ResetHomographState();
             return;
         }
 
         var text = GetSearchText();
         int startIndex = GetCursorIndex();
-        int index = text.IndexOf(pattern, startIndex, StringComparison.CurrentCulture);
-        if (index < 0)
+        var match = searchRegex.Match(text, startIndex);
+        if (!match.Success && startIndex > 0)
+            match = searchRegex.Match(text, 0);
+
+        if (!match.Success)
         {
             MessageBox.Show("Совпадения не найдены.", "Замена",
                 MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
-        SelectInText(index, pattern.Length);
+        SelectInText(match.Index, match.Length);
+    }
+
+    private async void ReplaceAll_Click(object sender, RoutedEventArgs e)
+    {
+        var pattern = FindTextBox.Text;
+        if (string.IsNullOrEmpty(pattern)) return;
+
+        Regex searchRegex;
+        try
+        {
+            searchRegex = CreateFindRegex(pattern);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Ошибка шаблона поиска:\n{ex.Message}", "Заменить всё",
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        var text = GetSearchText();
+        var replacement = ReplaceTextBox.Text;
+        int replacements = 0;
+        var updated = searchRegex.Replace(text, m =>
+        {
+            replacements++;
+            return m.Result(replacement);
+        });
+
+        if (replacements == 0)
+        {
+            MessageBox.Show("Совпадения не найдены.", "Заменить всё",
+                MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        SetPlainText(updated);
+        ResetHomographState();
+        await UpdateStatisticsAsync(updated);
+
+        MessageBox.Show($"Выполнено замен: {replacements}.", "Заменить всё",
+            MessageBoxButton.OK, MessageBoxImage.Information);
+        StatusInfo.Text = $"Заменено: {replacements}";
+    }
+
+    private Regex CreateFindRegex(string pattern)
+    {
+        var effectivePattern = RegexCheckBox.IsChecked == true
+            ? pattern
+            : Regex.Escape(pattern);
+
+        if (WholeWordCheckBox.IsChecked == true)
+            effectivePattern = $@"(?<![\p{{L}}\p{{Nd}}_+])(?:{effectivePattern})(?![\p{{L}}\p{{Nd}}_+])";
+
+        var options = RegexOptions.Multiline;
+        if (MatchCaseCheckBox.IsChecked != true)
+            options |= RegexOptions.IgnoreCase;
+
+        return new Regex(effectivePattern, options);
+    }
+
+    private static string PreserveFirstLetterCase(string original, string replacement)
+    {
+        if (string.IsNullOrEmpty(original) || string.IsNullOrEmpty(replacement))
+            return replacement;
+
+        var originalFirst = original[0];
+        var replacementFirst = replacement[0];
+        if (!char.IsLetter(replacementFirst))
+            return replacement;
+
+        if (char.IsUpper(originalFirst))
+        {
+            if (replacementFirst == '+')
+            {
+                return replacementFirst + char.ToUpper(replacement[1], CultureInfo.CurrentCulture) + replacement[2..];
+            }
+            else 
+                return char.ToUpper(replacementFirst, CultureInfo.CurrentCulture) + replacement[1..];
+        }
+
+        return replacement;
     }
 
     private string GetSearchText()
@@ -773,8 +906,22 @@ public partial class MainWindow : Window
 
         try
         {
+            var stats = new List<string>(selected.Count);
             foreach (var rule in selected)
-                text = Regex.Replace(text, rule.Pattern, rule.Replacement, RegexOptions.Multiline);
+            {
+                var regex = new Regex(rule.Pattern, RegexOptions.Multiline);
+                int count = regex.Matches(text).Count;
+                text = regex.Replace(text, rule.Replacement);
+                stats.Add($"• {rule.Description}: {count}");
+            }
+
+            MessageBox.Show(
+                "Очистка завершена:\n\n" + string.Join(Environment.NewLine, stats),
+                "Очистка",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+
+            StatusInfo.Text = "Очистка: " + string.Join("; ", stats.Select(s => s[2..]));
         }
         catch (Exception ex)
         {

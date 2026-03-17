@@ -10,6 +10,11 @@
 
     <Window.Resources>
         <converters:ListToStringConverter x:Key="ListToStringConverter"/>
+        <Style x:Key="VsFindOptionCheckBoxStyle" TargetType="CheckBox">
+            <Setter Property="Margin" Value="6,0,0,0"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Padding" Value="4,1"/>
+        </Style>
     </Window.Resources>
 
     <Window.CommandBindings>
@@ -81,7 +86,7 @@
 
             <!-- ── Tab: Текст ── -->
             <TabItem Header="Текст">
-                <Grid>
+                <Grid KeyboardNavigation.TabNavigation="Cycle">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
@@ -97,10 +102,12 @@
                                     Value="{Binding Homograph.Threshold, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                     Minimum="0" Maximum="100" Width="100"
                                     TickFrequency="1" IsSnapToTickEnabled="True"
+                                    TabIndex="0"
                                     VerticalAlignment="Center"/>
                             <Separator/>
                             <Button x:Name="PrevBtn"
                                     Content="◄" IsEnabled="False" Padding="8,2"
+                                    TabIndex="1"
                                     ToolTip="Предыдущий неуверенный омограф (Alt+W)"
                                     Click="PrevHomograph_Click"/>
                             <Separator/>
@@ -111,6 +118,7 @@
                             <Separator/>
                             <Button x:Name="NextBtn"
                                     Content="►" IsEnabled="False" Padding="8,2"
+                                    TabIndex="2"
                                     ToolTip="Следующий неуверенный омограф (Alt+S)"
                                     Click="NextHomograph_Click"/>
                             <Separator/>
@@ -118,6 +126,7 @@
                                       Width="220" Margin="0,0,6,0"
                                       IsEditable="True" IsReadOnly="True"
                                       IsTextSearchEnabled="False" StaysOpenOnEdit="True"
+                                      TabIndex="3"
                                       Text="Очистка текста">
                                 <ComboBox.ItemContainerStyle>
                                     <Style TargetType="ComboBoxItem">
@@ -133,25 +142,46 @@
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
                             <Button Content="⚡" Padding="5,2" Click="ApplyCleanRules_Click"
+                                    TabIndex="4"
                                     ToolTip="Применить выбранные модификаторы"/>
                         </ToolBar>
                     </ToolBarTray>
 
                     <!-- Toolbar: find / replace (hidden by default) -->
                     <ToolBarTray Grid.Row="1" IsLocked="False"
-                                 x:Name="FindReplaceBar" Visibility="Collapsed">
+                                 x:Name="FindReplaceBar" Visibility="Visible">
                         <ToolBar>
                             <TextBlock Text="Найти: " VerticalAlignment="Center"/>
                             <TextBox x:Name="FindTextBox" Width="160"
+                                     TabIndex="5"
                                      KeyDown="FindTextBox_KeyDown"/>
-                            <Button Content="🔍" Padding="5,2" Margin="0,0,8,0"
+                            <Button x:Name="FindNextBtn" Content="🔍" Padding="5,2" Margin="0,0,8,0"
+                                    TabIndex="6"
                                     Click="FindNext_Click" ToolTip="Найти"/>
                             <Separator/>
                             <TextBlock Text="Заменить на: " VerticalAlignment="Center"/>
                             <TextBox x:Name="ReplaceTextBox" Width="160"
+                                     TabIndex="7"
                                      KeyDown="ReplaceTextBox_KeyDown"/>
-                            <Button Content="🔠" Padding="5,2"
+                            <Button x:Name="ReplaceNextBtn" Content="Заменить" Padding="5,2"
+                                    TabIndex="8"
                                     Click="ReplaceNext_Click" ToolTip="Заменить"/>
+                            <Button x:Name="ReplaceAllBtn" Content="Заменить всё" Padding="5,2" Margin="6,0,0,0"
+                                    TabIndex="9"
+                                    Click="ReplaceAll_Click" ToolTip="Заменить все найденные совпадения"/>
+                            <Separator/>
+                            <CheckBox x:Name="RegexCheckBox" Content=".*" FontWeight="Bold"
+                                      Style="{StaticResource VsFindOptionCheckBoxStyle}"
+                                      TabIndex="10"
+                                      ToolTip="Использовать регулярные выражения (Alt+E)"/>
+                            <CheckBox x:Name="WholeWordCheckBox" Content="|Ab|"
+                                      Style="{StaticResource VsFindOptionCheckBoxStyle}"
+                                      TabIndex="11"
+                                      ToolTip="Искать только полные слова (Alt+W)"/>
+                            <CheckBox x:Name="MatchCaseCheckBox" Content="AB"
+                                      Style="{StaticResource VsFindOptionCheckBoxStyle}"
+                                      TabIndex="12"
+                                      ToolTip="Учитывать регистр (Alt+C)"/>
                         </ToolBar>
                     </ToolBarTray>
 
@@ -163,6 +193,7 @@
                                      FontSize="14" FontFamily="Segoe UI"
                                      WordWrap="True"
                                      Padding="6"
+                                     IsTabStop="False"
                                      TextChanged="TextEditor_TextChanged"
                                      PreviewMouseWheel="Text_PreviewMouseWheel"/>
                     </Grid>

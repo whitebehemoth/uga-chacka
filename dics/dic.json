@@ -64155,17 +64155,6 @@
   ],
   "одновременно": [
     {
-      "target": "одновр+еменно",
-      "ref": "сч",
-      "gram_def": [
-        "прл крат ед ср"
-      ],
-      "frequency": 92,
-      "lemma": "одновременный",
-      "stress_pos": 7,
-      "lemma_def": []
-    },
-    {
       "target": "одноврем+енно",
       "ref": "оч",
       "gram_def": [
@@ -64185,17 +64174,6 @@
       "frequency": 87,
       "lemma": "одновременно",
       "stress_pos": 7,
-      "lemma_def": []
-    },
-    {
-      "target": "одноврем+енно",
-      "ref": "ср",
-      "gram_def": [
-        "нар опред спос"
-      ],
-      "frequency": 87,
-      "lemma": "одновременно",
-      "stress_pos": 9,
       "lemma_def": []
     }
   ],
@@ -67336,17 +67314,6 @@
   ],
   "отдали": [
     {
-      "target": "+отдали",
-      "ref": "сч",
-      "gram_def": [
-        "гл сов пер/не прош мн"
-      ],
-      "frequency": 150,
-      "lemma": "отдать",
-      "stress_pos": 1,
-      "lemma_def": []
-    },
-    {
       "target": "отд+али",
       "ref": "оч",
       "gram_def": [
@@ -68796,44 +68763,6 @@
       "frequency": 13,
       "lemma": "паря",
       "stress_pos": 2,
-      "lemma_def": []
-    }
-  ],
-  "пари": [
-    {
-      "target": "п+ари",
-      "ref": "сч",
-      "gram_def": [
-        "сущ одуш ед муж род",
-        "сущ одуш мн им"
-      ],
-      "frequency": 13,
-      "lemma": "паря",
-      "stress_pos": 2,
-      "lemma_def": []
-    },
-    {
-      "target": "пар+и",
-      "ref": "оч",
-      "gram_def": [
-        "гл несов непер пов ед"
-      ],
-      "frequency": 8,
-      "lemma": "парить",
-      "stress_pos": 4,
-      "lemma_def": [
-        "держаться в воздухе; пропускать пар через щель"
-      ]
-    },
-    {
-      "target": "пар+и",
-      "ref": "мч",
-      "gram_def": [
-        "сущ неод ед ср нескл"
-      ],
-      "frequency": 5,
-      "lemma": "пари",
-      "stress_pos": 4,
       "lemma_def": []
     }
   ],
@@ -70584,19 +70513,6 @@
   ],
   "пары": [
     {
-      "target": "пар+ы",
-      "ref": "сч",
-      "gram_def": [
-        "сущ неод ед жен род",
-        "сущ неод мн вин",
-        "сущ неод мн им"
-      ],
-      "frequency": 120,
-      "lemma": "пара",
-      "stress_pos": 4,
-      "lemma_def": []
-    },
-    {
       "target": "п+ары",
       "ref": "оч",
       "gram_def": [
@@ -70607,7 +70523,7 @@
       "frequency": 120,
       "lemma": "пара",
       "stress_pos": 2,
-      "lemma_def": []
+      "lemma_def": ["малое количество (обычно 2) чего-то"]
     },
     {
       "target": "пар+ы",
@@ -70623,17 +70539,6 @@
     }
   ],
   "парю": [
-    {
-      "target": "п+арю",
-      "ref": "сч",
-      "gram_def": [
-        "сущ одуш ед муж вин"
-      ],
-      "frequency": 13,
-      "lemma": "паря",
-      "stress_pos": 2,
-      "lemma_def": []
-    },
     {
       "target": "п+арю",
       "ref": "оч",
@@ -70671,7 +70576,7 @@
       "frequency": 13,
       "lemma": "паря",
       "stress_pos": 2,
-      "lemma_def": []
+      "lemma_def": ["жаргон, просторечье"]
     },
     {
       "target": "п+аря",
@@ -85573,7 +85478,7 @@
       "frequency": 44,
       "lemma": "поп",
       "stress_pos": 4,
-      "lemma_def": []
+      "lemma_def": ["устойчевое 'ставить на попа'"]
     },
     {
       "target": "п+опа",
@@ -85584,7 +85489,7 @@
       "frequency": 29,
       "lemma": "попа",
       "stress_pos": 2,
-      "lemma_def": []
+      "lemma_def": ["часть тела"]
     }
   ],
   "попам": [
@@ -85597,7 +85502,7 @@
       "frequency": 44,
       "lemma": "поп",
       "stress_pos": 4,
-      "lemma_def": []
+      "lemma_def": ["служитль культа"]
     },
     {
       "target": "п+опам",
@@ -85608,7 +85513,7 @@
       "frequency": 29,
       "lemma": "попа",
       "stress_pos": 2,
-      "lemma_def": []
+      "lemma_def": ["часть тела"]
     }
   ],
   "попами": [
@@ -85621,7 +85526,7 @@
       "frequency": 44,
       "lemma": "поп",
       "stress_pos": 4,
-      "lemma_def": []
+      "lemma_def": [ "служитль культа" ]
     },
     {
       "target": "п+опами",
@@ -85632,7 +85537,7 @@
       "frequency": 29,
       "lemma": "попа",
       "stress_pos": 2,
-      "lemma_def": []
+      "lemma_def": [ "часть тела" ]
     }
   ],
   "попах": [
@@ -85645,7 +85550,7 @@
       "frequency": 44,
       "lemma": "поп",
       "stress_pos": 4,
-      "lemma_def": []
+      "lemma_def": [ "служитль культа" ]
     },
     {
       "target": "п+опах",
@@ -85656,7 +85561,7 @@
       "frequency": 29,
       "lemma": "попа",
       "stress_pos": 2,
-      "lemma_def": []
+      "lemma_def": [ "часть тела" ]
     }
   ],
   "попе": [
@@ -85669,7 +85574,7 @@
       "frequency": 44,
       "lemma": "поп",
       "stress_pos": 4,
-      "lemma_def": []
+      "lemma_def": [ "служитль культа" ]
     },
     {
       "target": "п+опе",
@@ -85681,7 +85586,7 @@
       "frequency": 29,
       "lemma": "попа",
       "stress_pos": 2,
-      "lemma_def": []
+      "lemma_def": [ "часть тела" ]
     }
   ],
   "попили": [
