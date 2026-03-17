@@ -429,11 +429,98 @@ public partial class MainWindow : Window
 
     private void RescanHomographs_Click(object sender, RoutedEventArgs e)
     {
+        var text = GetPlainText();
+        if (string.IsNullOrWhiteSpace(text))
+            return;
 
+        var valid = new List<ResolvedHomograph>(_allHomographs.Count);
+        foreach (var h in _allHomographs)
+        {
+            if (h.AbsolutePosition < 0 || h.AbsolutePosition >= text.Length)
+                continue;
+
+            var expected = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            if (!string.IsNullOrWhiteSpace(h.StressedWord))
+                expected.Add(h.StressedWord);
+            foreach (var v in h.Variants)
+            {
+                if (!string.IsNullOrWhiteSpace(v.Target))
+                    expected.Add(v.Target);
+            }
+
+            if (expected.Count == 0)
+                continue;
+
+            if (TryMatchAt(h.AbsolutePosition, expected, text, out int matchedLength))
+            {
+                h.Length = matchedLength;
+                valid.Add(h);
+            }
+        }
+
+        _allHomographs = valid;
+        ShowResolvedText(text, _allHomographs, _settings.Homograph.Threshold);
+        StatusHomographCount.Text = _allHomographs.Count.ToString();
+        StatusInfo.Text = _allHomographs.Count > 0
+            ? $"Пересканировано омографов: {_allHomographs.Count}"
+            : "Омографы по текущим позициям не найдены.";
     }
     private void RescanNostress_Click(object sender, RoutedEventArgs e)
     {
+        var text = GetPlainText();
+        if (string.IsNullOrWhiteSpace(text))
+            return;
 
+        var wordMatches = new Regex(@"[а-яА-ЯёЁ+]+", RegexOptions.CultureInvariant).Matches(text);
+        if (wordMatches.Count == 0)
+            return;
+
+        var wordsToCheck = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (Match m in wordMatches)
+        {
+            var normalized = m.Value.ToLowerInvariant().Replace("ё", "е");
+            if (normalized.Length > 2 && !normalized.Contains("+"))
+                wordsToCheck.Add(normalized);
+        }
+
+        var knownAccentWords = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var rawPath in _settings.Homograph.DicAPath)
+        {
+            var path = ResolvePath(rawPath);
+            if (!File.Exists(path)) continue;
+
+            foreach (var entry in AccentService.LoadStressEntries(path, wordsToCheck))
+                knownAccentWords.Add(entry.Key);
+        }
+
+        var unknownMatches = new List<DocumentMatch>();
+        foreach (Match m in wordMatches)
+        {
+            if (m.Value.Contains('+'))
+                continue;
+
+            var normalized = m.Value.ToLowerInvariant().Replace("ё", "е");
+            if (normalized.Length < 3 || normalized.Contains("+"))
+                continue;
+
+            if (!knownAccentWords.Contains(normalized))
+                unknownMatches.Add(new DocumentMatch { Start = m.Index, Length = m.Length });
+        }
+
+        TextEditor.TextArea.TextView.LineTransformers.Clear();
+        if (_allHomographs.Count > 0)
+        {
+            _colorizer = new HomographColorizer(_allHomographs, () => _settings.Homograph.Threshold);
+            TextEditor.TextArea.TextView.LineTransformers.Add(_colorizer);
+        }
+
+        if (unknownMatches.Count > 0)
+            TextEditor.TextArea.TextView.LineTransformers.Add(new MatchColorizer(unknownMatches));
+
+        TextEditor.TextArea.TextView.Redraw();
+        StatusInfo.Text = unknownMatches.Count > 0
+            ? $"Неизвестных слов: {unknownMatches.Count}"
+            : "Неизвестных слов не найдено.";
     }
     private void ApplyStress_Click(object sender, RoutedEventArgs e)
     {

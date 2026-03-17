@@ -2287,20 +2287,6 @@
       "lemma_def": []
     }
   ],
-  "белы": [
-    {
-      "target": "б+елы",
-      "ref": "сч",
-      "gram_def": [
-        "сущ неод мн вин",
-        "сущ неод мн им"
-      ],
-      "frequency": 37,
-      "lemma": "бел",
-      "stress_pos": 2,
-      "lemma_def": []
-    }
-  ],
   "белью": [
     {
       "target": "бель+ю",
@@ -6455,20 +6441,6 @@
       "frequency": 3,
       "lemma": "бура",
       "stress_pos": 4,
-      "lemma_def": []
-    }
-  ],
-  "буре": [
-    {
-      "target": "б+уре",
-      "ref": "сч",
-      "gram_def": [
-        "сущ неод ед муж пр",
-        "сущ одуш ед муж пр"
-      ],
-      "frequency": 4,
-      "lemma": "бур",
-      "stress_pos": 2,
       "lemma_def": []
     }
   ],
@@ -11333,18 +11305,6 @@
   ],
   "ворота": [
     {
-      "target": "ворот+а",
-      "ref": "сч",
-      "gram_def": [
-        "сущ неод мн вин",
-        "сущ неод мн им"
-      ],
-      "frequency": 100,
-      "lemma": "ворота",
-      "stress_pos": 6,
-      "lemma_def": []
-    },
-    {
       "target": "вор+ота",
       "ref": "оч",
       "gram_def": [
@@ -11390,17 +11350,6 @@
       "lemma": "ворота",
       "stress_pos": 4,
       "lemma_def": []
-    },
-    {
-      "target": "ворот+ам",
-      "ref": "мч",
-      "gram_def": [
-        "сущ неод мн дат"
-      ],
-      "frequency": 100,
-      "lemma": "ворота",
-      "stress_pos": 6,
-      "lemma_def": []
     }
   ],
   "воротами": [
@@ -11425,17 +11374,6 @@
       "lemma": "ворота",
       "stress_pos": 4,
       "lemma_def": []
-    },
-    {
-      "target": "ворот+ами",
-      "ref": "мч",
-      "gram_def": [
-        "сущ неод мн тв"
-      ],
-      "frequency": 100,
-      "lemma": "ворота",
-      "stress_pos": 6,
-      "lemma_def": []
     }
   ],
   "воротах": [
@@ -11459,17 +11397,6 @@
       "frequency": 100,
       "lemma": "ворот",
       "stress_pos": 2,
-      "lemma_def": []
-    },
-    {
-      "target": "ворот+ах",
-      "ref": "мч",
-      "gram_def": [
-        "сущ неод мн пр"
-      ],
-      "frequency": 100,
-      "lemma": "ворота",
-      "stress_pos": 6,
       "lemma_def": []
     }
   ],
@@ -16554,19 +16481,6 @@
       "lemma_def": []
     }
   ],
-  "глубоко": [
-    {
-      "target": "глубок+о",
-      "ref": "сч",
-      "gram_def": [
-        "прл крат ед ср"
-      ],
-      "frequency": 220,
-      "lemma": "глубокий",
-      "stress_pos": 7,
-      "lemma_def": []
-    }
-  ],
   "глуши": [
     {
       "target": "гл+уши",
@@ -18056,19 +17970,7 @@
       "lemma_def": []
     }
   ],
-  "губная": [
-    {
-      "target": "г+убная",
-      "ref": "сч",
-      "gram_def": [
-        "прл ед жен им"
-      ],
-      "frequency": 2,
-      "lemma": "губный",
-      "stress_pos": 2,
-      "lemma_def": []
-    }
-  ],
+  
   "давящая": [
     {
       "target": "д+авящая",
@@ -22021,7 +21923,7 @@
       "frequency": 11,
       "lemma": "дружка",
       "stress_pos": 3,
-      "lemma_def": []
+      "lemma_def": ["устойчевое 'друг за дружку'"]
     }
   ],
   "дубка": [
@@ -32751,17 +32653,6 @@
       "lemma": "засека",
       "stress_pos": 2,
       "lemma_def": []
-    },
-    {
-      "target": "зас+ек",
-      "ref": "мч",
-      "gram_def": [
-        "сущ неод мн род"
-      ],
-      "frequency": 1,
-      "lemma": "засека",
-      "stress_pos": 4,
-      "lemma_def": []
     }
   ],
   "засеки": [
@@ -32774,19 +32665,6 @@
       "frequency": 3,
       "lemma": "засечь",
       "stress_pos": 6,
-      "lemma_def": []
-    },
-    {
-      "target": "зас+еки",
-      "ref": "оч",
-      "gram_def": [
-        "сущ неод ед жен род",
-        "сущ неод мн вин",
-        "сущ неод мн им"
-      ],
-      "frequency": 1,
-      "lemma": "засека",
-      "stress_pos": 4,
       "lemma_def": []
     },
     {
@@ -32824,17 +32702,6 @@
       "frequency": 1,
       "lemma": "засека",
       "stress_pos": 2,
-      "lemma_def": []
-    },
-    {
-      "target": "зас+еку",
-      "ref": "мч",
-      "gram_def": [
-        "сущ неод ед жен вин"
-      ],
-      "frequency": 1,
-      "lemma": "засека",
-      "stress_pos": 4,
       "lemma_def": []
     }
   ],
@@ -52376,30 +52243,6 @@
       "lemma_def": []
     }
   ],
-  "молча": [
-    {
-      "target": "молч+а",
-      "ref": "сч",
-      "gram_def": [
-        "дееп несов непер наст"
-      ],
-      "frequency": 220,
-      "lemma": "молчать",
-      "stress_pos": 5,
-      "lemma_def": ["обычно делать что-то молча о чем-то"]
-    },
-    {
-      "target": "м+олча",
-      "ref": "оч",
-      "gram_def": [
-        "нар опред спос"
-      ],
-      "frequency": 80,
-      "lemma": "молчать",
-      "stress_pos": 2,
-      "lemma_def": ["все остальные варианты"]
-    }
-  ],
   "молю": [
     {
       "target": "мол+ю",
@@ -54669,7 +54512,7 @@
       "lemma": "мошка",
       "stress_pos": 2,
       "lemma_def": [
-        "летающее насекомое"
+        "летающее насекомое, одно"
       ]
     },
     {
@@ -84456,19 +84299,6 @@
       "lemma_def": []
     }
   ],
-  "полночью": [
-    {
-      "target": "п+олночью",
-      "ref": "сч",
-      "gram_def": [
-        "сущ неод ед жен тв"
-      ],
-      "frequency": 21,
-      "lemma": "полночь",
-      "stress_pos": 2,
-      "lemma_def": []
-    }
-  ],
   "пологом": [
     {
       "target": "пол+огом",
@@ -86113,36 +85943,6 @@
       "lemma": "попеть",
       "stress_pos": 5,
       "lemma_def": []
-    }
-  ],
-  "поправильнее": [
-    {
-      "target": "попр+авильнее",
-      "ref": "сч",
-      "gram_def": [
-        "прл сравн"
-      ],
-      "frequency": 140,
-      "lemma": "правильный",
-      "stress_pos": 5,
-      "lemma_def": [
-        "от правило (инструмент)"
-      ]
-    }
-  ],
-  "поправильней": [
-    {
-      "target": "попр+авильней",
-      "ref": "сч",
-      "gram_def": [
-        "прл сравн"
-      ],
-      "frequency": 140,
-      "lemma": "правильный",
-      "stress_pos": 5,
-      "lemma_def": [
-        "от правило (инструмент)"
-      ]
     }
   ],
   "поправим": [
@@ -101449,246 +101249,6 @@
       "lemma_def": []
     }
   ],
-  "пухового": [
-    {
-      "target": "пух+ового",
-      "ref": "сч",
-      "gram_def": [
-        "прл ед муж вин одуш",
-        "прл ед муж род",
-        "прл ед ср род"
-      ],
-      "frequency": 5,
-      "lemma": "пуховый",
-      "stress_pos": 4,
-      "lemma_def": []
-    },
-    {
-      "target": "пухов+ого",
-      "ref": "оч",
-      "gram_def": [
-        "прл ед муж вин одуш",
-        "прл ед муж род",
-        "прл ед ср род"
-      ],
-      "frequency": 2,
-      "lemma": "пуховой",
-      "stress_pos": 6,
-      "lemma_def": []
-    }
-  ],
-  "пуховое": [
-    {
-      "target": "пух+овое",
-      "ref": "сч",
-      "gram_def": [
-        "прл ед ср вин",
-        "прл ед ср им"
-      ],
-      "frequency": 5,
-      "lemma": "пуховый",
-      "stress_pos": 4,
-      "lemma_def": []
-    },
-    {
-      "target": "пухов+ое",
-      "ref": "оч",
-      "gram_def": [
-        "прл ед ср вин",
-        "прл ед ср им"
-      ],
-      "frequency": 2,
-      "lemma": "пуховой",
-      "stress_pos": 6,
-      "lemma_def": []
-    }
-  ],
-  "пуховой": [
-    {
-      "target": "пух+овой",
-      "ref": "сч",
-      "gram_def": [
-        "прл ед жен дат",
-        "прл ед жен пр",
-        "прл ед жен род",
-        "прл ед жен тв"
-      ],
-      "frequency": 5,
-      "lemma": "пуховый",
-      "stress_pos": 4,
-      "lemma_def": []
-    },
-    {
-      "target": "пухов+ой",
-      "ref": "оч",
-      "gram_def": [
-        "прл ед муж вин неод",
-        "прл ед муж им"
-      ],
-      "frequency": 2,
-      "lemma": "пуховой",
-      "stress_pos": 6,
-      "lemma_def": []
-    }
-  ],
-  "пуховом": [
-    {
-      "target": "пух+овом",
-      "ref": "сч",
-      "gram_def": [
-        "прл ед муж пр",
-        "прл ед ср пр"
-      ],
-      "frequency": 5,
-      "lemma": "пуховый",
-      "stress_pos": 4,
-      "lemma_def": []
-    },
-    {
-      "target": "пухов+ом",
-      "ref": "оч",
-      "gram_def": [
-        "прл ед муж пр",
-        "прл ед ср пр"
-      ],
-      "frequency": 2,
-      "lemma": "пуховой",
-      "stress_pos": 6,
-      "lemma_def": []
-    }
-  ],
-  "пуховому": [
-    {
-      "target": "пух+овому",
-      "ref": "сч",
-      "gram_def": [
-        "прл ед муж дат",
-        "прл ед ср дат"
-      ],
-      "frequency": 5,
-      "lemma": "пуховый",
-      "stress_pos": 4,
-      "lemma_def": []
-    },
-    {
-      "target": "пухов+ому",
-      "ref": "оч",
-      "gram_def": [
-        "прл ед муж дат",
-        "прл ед ср дат"
-      ],
-      "frequency": 2,
-      "lemma": "пуховой",
-      "stress_pos": 6,
-      "lemma_def": []
-    }
-  ],
-  "пуховые": [
-    {
-      "target": "пух+овые",
-      "ref": "сч",
-      "gram_def": [
-        "прл мн вин неод",
-        "прл мн им"
-      ],
-      "frequency": 5,
-      "lemma": "пуховый",
-      "stress_pos": 4,
-      "lemma_def": []
-    },
-    {
-      "target": "пухов+ые",
-      "ref": "оч",
-      "gram_def": [
-        "прл мн вин неод",
-        "прл мн им"
-      ],
-      "frequency": 2,
-      "lemma": "пуховой",
-      "stress_pos": 6,
-      "lemma_def": []
-    }
-  ],
-  "пуховым": [
-    {
-      "target": "пух+овым",
-      "ref": "сч",
-      "gram_def": [
-        "прл ед муж тв",
-        "прл ед ср тв",
-        "прл мн дат"
-      ],
-      "frequency": 5,
-      "lemma": "пуховый",
-      "stress_pos": 4,
-      "lemma_def": []
-    },
-    {
-      "target": "пухов+ым",
-      "ref": "оч",
-      "gram_def": [
-        "прл ед муж тв",
-        "прл ед ср тв",
-        "прл мн дат"
-      ],
-      "frequency": 2,
-      "lemma": "пуховой",
-      "stress_pos": 6,
-      "lemma_def": []
-    }
-  ],
-  "пуховыми": [
-    {
-      "target": "пух+овыми",
-      "ref": "сч",
-      "gram_def": [
-        "прл мн тв"
-      ],
-      "frequency": 5,
-      "lemma": "пуховый",
-      "stress_pos": 4,
-      "lemma_def": []
-    },
-    {
-      "target": "пухов+ыми",
-      "ref": "оч",
-      "gram_def": [
-        "прл мн тв"
-      ],
-      "frequency": 2,
-      "lemma": "пуховой",
-      "stress_pos": 6,
-      "lemma_def": []
-    }
-  ],
-  "пуховых": [
-    {
-      "target": "пух+овых",
-      "ref": "сч",
-      "gram_def": [
-        "прл мн вин одуш",
-        "прл мн пр",
-        "прл мн род"
-      ],
-      "frequency": 5,
-      "lemma": "пуховый",
-      "stress_pos": 4,
-      "lemma_def": []
-    },
-    {
-      "target": "пухов+ых",
-      "ref": "оч",
-      "gram_def": [
-        "прл мн вин одуш",
-        "прл мн пр",
-        "прл мн род"
-      ],
-      "frequency": 2,
-      "lemma": "пуховой",
-      "stress_pos": 6,
-      "lemma_def": []
-    }
-  ],
   "пушка": [
     {
       "target": "п+ушка",
@@ -109572,544 +109132,6 @@
       "lemma_def": []
     }
   ],
-  "руда": [
-    {
-      "target": "р+уда",
-      "ref": "сч",
-      "gram_def": [
-        "сущ неод ед муж род"
-      ],
-      "frequency": 15,
-      "lemma": "руд",
-      "stress_pos": 2,
-      "lemma_def": []
-    },
-    {
-      "target": "р+уда",
-      "ref": "оч",
-      "gram_def": [
-        "сущ неод ед жен им"
-      ],
-      "frequency": 15,
-      "lemma": "руда",
-      "stress_pos": 2,
-      "lemma_def": []
-    },
-    {
-      "target": "руд+а",
-      "ref": "мч",
-      "gram_def": [
-        "сущ неод ед жен им"
-      ],
-      "frequency": 15,
-      "lemma": "руда",
-      "stress_pos": 4,
-      "lemma_def": []
-    },
-    {
-      "target": "руд+а",
-      "ref": "ср",
-      "gram_def": [
-        "прл крат ед жен"
-      ],
-      "frequency": 13,
-      "lemma": "рудый",
-      "stress_pos": 4,
-      "lemma_def": []
-    }
-  ],
-  "рудая": [
-    {
-      "target": "р+удая",
-      "ref": "сч",
-      "gram_def": [
-        "прл ед жен им"
-      ],
-      "frequency": 13,
-      "lemma": "рудый",
-      "stress_pos": 2,
-      "lemma_def": []
-    },
-    {
-      "target": "руд+ая",
-      "ref": "оч",
-      "gram_def": [
-        "прл ед жен им"
-      ],
-      "frequency": 12,
-      "lemma": "рудой",
-      "stress_pos": 4,
-      "lemma_def": []
-    }
-  ],
-  "руде": [
-    {
-      "target": "р+уде",
-      "ref": "сч",
-      "gram_def": [
-        "сущ неод ед жен дат",
-        "сущ неод ед жен пр"
-      ],
-      "frequency": 15,
-      "lemma": "руда",
-      "stress_pos": 2,
-      "lemma_def": []
-    },
-    {
-      "target": "руд+е",
-      "ref": "оч",
-      "gram_def": [
-        "сущ неод ед жен дат",
-        "сущ неод ед жен пр"
-      ],
-      "frequency": 15,
-      "lemma": "руда",
-      "stress_pos": 4,
-      "lemma_def": []
-    },
-    {
-      "target": "р+уде",
-      "ref": "мч",
-      "gram_def": [
-        "сущ неод ед муж пр"
-      ],
-      "frequency": 15,
-      "lemma": "руд",
-      "stress_pos": 2,
-      "lemma_def": []
-    }
-  ],
-  "рудого": [
-    {
-      "target": "р+удого",
-      "ref": "сч",
-      "gram_def": [
-        "прл ед муж вин одуш",
-        "прл ед муж род",
-        "прл ед ср род"
-      ],
-      "frequency": 13,
-      "lemma": "рудый",
-      "stress_pos": 2,
-      "lemma_def": []
-    },
-    {
-      "target": "руд+ого",
-      "ref": "оч",
-      "gram_def": [
-        "прл ед муж вин одуш",
-        "прл ед муж род",
-        "прл ед ср род"
-      ],
-      "frequency": 12,
-      "lemma": "рудой",
-      "stress_pos": 4,
-      "lemma_def": []
-    }
-  ],
-  "рудое": [
-    {
-      "target": "р+удое",
-      "ref": "сч",
-      "gram_def": [
-        "прл ед ср вин",
-        "прл ед ср им"
-      ],
-      "frequency": 13,
-      "lemma": "рудый",
-      "stress_pos": 2,
-      "lemma_def": []
-    },
-    {
-      "target": "руд+ое",
-      "ref": "оч",
-      "gram_def": [
-        "прл ед ср вин",
-        "прл ед ср им"
-      ],
-      "frequency": 12,
-      "lemma": "рудой",
-      "stress_pos": 4,
-      "lemma_def": []
-    }
-  ],
-  "рудой": [
-    {
-      "target": "руд+ой",
-      "ref": "сч",
-      "gram_def": [
-        "сущ неод ед жен тв"
-      ],
-      "frequency": 15,
-      "lemma": "руда",
-      "stress_pos": 4,
-      "lemma_def": []
-    },
-    {
-      "target": "р+удой",
-      "ref": "оч",
-      "gram_def": [
-        "сущ неод ед жен тв"
-      ],
-      "frequency": 15,
-      "lemma": "руда",
-      "stress_pos": 2,
-      "lemma_def": []
-    },
-    {
-      "target": "р+удой",
-      "ref": "мч",
-      "gram_def": [
-        "прл ед жен дат",
-        "прл ед жен пр",
-        "прл ед жен род",
-        "прл ед жен тв"
-      ],
-      "frequency": 13,
-      "lemma": "рудый",
-      "stress_pos": 2,
-      "lemma_def": []
-    },
-    {
-      "target": "руд+ой",
-      "ref": "ср",
-      "gram_def": [
-        "прл ед жен дат",
-        "прл ед жен пр",
-        "прл ед жен род",
-        "прл ед жен тв",
-        "прл ед муж вин неод",
-        "прл ед муж им"
-      ],
-      "frequency": 12,
-      "lemma": "рудой",
-      "stress_pos": 4,
-      "lemma_def": []
-    }
-  ],
-  "рудом": [
-    {
-      "target": "р+удом",
-      "ref": "сч",
-      "gram_def": [
-        "сущ неод ед муж тв"
-      ],
-      "frequency": 15,
-      "lemma": "руд",
-      "stress_pos": 2,
-      "lemma_def": []
-    },
-    {
-      "target": "р+удом",
-      "ref": "оч",
-      "gram_def": [
-        "прл ед муж пр",
-        "прл ед ср пр"
-      ],
-      "frequency": 13,
-      "lemma": "рудый",
-      "stress_pos": 2,
-      "lemma_def": []
-    },
-    {
-      "target": "руд+ом",
-      "ref": "мч",
-      "gram_def": [
-        "прл ед муж пр",
-        "прл ед ср пр"
-      ],
-      "frequency": 12,
-      "lemma": "рудой",
-      "stress_pos": 4,
-      "lemma_def": []
-    }
-  ],
-  "рудому": [
-    {
-      "target": "р+удому",
-      "ref": "сч",
-      "gram_def": [
-        "прл ед муж дат",
-        "прл ед ср дат"
-      ],
-      "frequency": 13,
-      "lemma": "рудый",
-      "stress_pos": 2,
-      "lemma_def": []
-    },
-    {
-      "target": "руд+ому",
-      "ref": "оч",
-      "gram_def": [
-        "прл ед муж дат",
-        "прл ед ср дат"
-      ],
-      "frequency": 12,
-      "lemma": "рудой",
-      "stress_pos": 4,
-      "lemma_def": []
-    }
-  ],
-  "рудою": [
-    {
-      "target": "р+удою",
-      "ref": "сч",
-      "gram_def": [
-        "сущ неод ед жен тв"
-      ],
-      "frequency": 15,
-      "lemma": "руда",
-      "stress_pos": 2,
-      "lemma_def": []
-    },
-    {
-      "target": "руд+ою",
-      "ref": "оч",
-      "gram_def": [
-        "сущ неод ед жен тв"
-      ],
-      "frequency": 15,
-      "lemma": "руда",
-      "stress_pos": 4,
-      "lemma_def": []
-    },
-    {
-      "target": "р+удою",
-      "ref": "мч",
-      "gram_def": [
-        "прл ед жен тв"
-      ],
-      "frequency": 13,
-      "lemma": "рудый",
-      "stress_pos": 2,
-      "lemma_def": []
-    },
-    {
-      "target": "руд+ою",
-      "ref": "ср",
-      "gram_def": [
-        "прл ед жен тв"
-      ],
-      "frequency": 12,
-      "lemma": "рудой",
-      "stress_pos": 4,
-      "lemma_def": []
-    }
-  ],
-  "руду": [
-    {
-      "target": "р+уду",
-      "ref": "сч",
-      "gram_def": [
-        "сущ неод ед жен вин"
-      ],
-      "frequency": 15,
-      "lemma": "руда",
-      "stress_pos": 2,
-      "lemma_def": []
-    },
-    {
-      "target": "р+уду",
-      "ref": "оч",
-      "gram_def": [
-        "сущ неод ед муж дат"
-      ],
-      "frequency": 15,
-      "lemma": "руд",
-      "stress_pos": 2,
-      "lemma_def": []
-    },
-    {
-      "target": "руд+у",
-      "ref": "мч",
-      "gram_def": [
-        "сущ неод ед жен вин"
-      ],
-      "frequency": 15,
-      "lemma": "руда",
-      "stress_pos": 4,
-      "lemma_def": []
-    }
-  ],
-  "рудую": [
-    {
-      "target": "р+удую",
-      "ref": "сч",
-      "gram_def": [
-        "прл ед жен вин"
-      ],
-      "frequency": 13,
-      "lemma": "рудый",
-      "stress_pos": 2,
-      "lemma_def": []
-    },
-    {
-      "target": "руд+ую",
-      "ref": "оч",
-      "gram_def": [
-        "прл ед жен вин"
-      ],
-      "frequency": 12,
-      "lemma": "рудой",
-      "stress_pos": 4,
-      "lemma_def": []
-    }
-  ],
-  "руды": [
-    {
-      "target": "р+уды",
-      "ref": "сч",
-      "gram_def": [
-        "сущ неод мн вин",
-        "сущ неод мн им"
-      ],
-      "frequency": 15,
-      "lemma": "руд",
-      "stress_pos": 2,
-      "lemma_def": []
-    },
-    {
-      "target": "р+уды",
-      "ref": "оч",
-      "gram_def": [
-        "сущ неод ед жен род",
-        "сущ неод мн вин",
-        "сущ неод мн им"
-      ],
-      "frequency": 15,
-      "lemma": "руда",
-      "stress_pos": 2,
-      "lemma_def": []
-    },
-    {
-      "target": "руд+ы",
-      "ref": "мч",
-      "gram_def": [
-        "сущ неод ед жен род"
-      ],
-      "frequency": 15,
-      "lemma": "руда",
-      "stress_pos": 4,
-      "lemma_def": []
-    },
-    {
-      "target": "р+уды",
-      "ref": "ср",
-      "gram_def": [
-        "прл крат мн"
-      ],
-      "frequency": 13,
-      "lemma": "рудый",
-      "stress_pos": 2,
-      "lemma_def": []
-    }
-  ],
-  "рудые": [
-    {
-      "target": "р+удые",
-      "ref": "сч",
-      "gram_def": [
-        "прл мн вин неод",
-        "прл мн им"
-      ],
-      "frequency": 13,
-      "lemma": "рудый",
-      "stress_pos": 2,
-      "lemma_def": []
-    },
-    {
-      "target": "руд+ые",
-      "ref": "оч",
-      "gram_def": [
-        "прл мн вин неод",
-        "прл мн им"
-      ],
-      "frequency": 12,
-      "lemma": "рудой",
-      "stress_pos": 4,
-      "lemma_def": []
-    }
-  ],
-  "рудым": [
-    {
-      "target": "р+удым",
-      "ref": "сч",
-      "gram_def": [
-        "прл ед муж тв",
-        "прл ед ср тв",
-        "прл мн дат"
-      ],
-      "frequency": 13,
-      "lemma": "рудый",
-      "stress_pos": 2,
-      "lemma_def": []
-    },
-    {
-      "target": "руд+ым",
-      "ref": "оч",
-      "gram_def": [
-        "прл ед муж тв",
-        "прл ед ср тв",
-        "прл мн дат"
-      ],
-      "frequency": 12,
-      "lemma": "рудой",
-      "stress_pos": 4,
-      "lemma_def": []
-    }
-  ],
-  "рудыми": [
-    {
-      "target": "р+удыми",
-      "ref": "сч",
-      "gram_def": [
-        "прл мн тв"
-      ],
-      "frequency": 13,
-      "lemma": "рудый",
-      "stress_pos": 2,
-      "lemma_def": []
-    },
-    {
-      "target": "руд+ыми",
-      "ref": "оч",
-      "gram_def": [
-        "прл мн тв"
-      ],
-      "frequency": 12,
-      "lemma": "рудой",
-      "stress_pos": 4,
-      "lemma_def": []
-    }
-  ],
-  "рудых": [
-    {
-      "target": "р+удых",
-      "ref": "сч",
-      "gram_def": [
-        "прл мн вин одуш",
-        "прл мн пр",
-        "прл мн род"
-      ],
-      "frequency": 13,
-      "lemma": "рудый",
-      "stress_pos": 2,
-      "lemma_def": []
-    },
-    {
-      "target": "руд+ых",
-      "ref": "оч",
-      "gram_def": [
-        "прл мн вин одуш",
-        "прл мн пр",
-        "прл мн род"
-      ],
-      "frequency": 12,
-      "lemma": "рудой",
-      "stress_pos": 4,
-      "lemma_def": []
-    }
-  ],
   "руна": [
     {
       "target": "р+уна",
@@ -111167,7 +110189,7 @@
       "frequency": 2100,
       "lemma": "сам",
       "stress_pos": 6,
-      "lemma_def": [ "Указывает на конкретное лицо (самостоятельно, лично), часто заменяет или уточняет одушевленное лицо" ]
+      "lemma_def": [ "Возвратное, часто заменяет или уточняет одушевленное лицо" ]
     },
     {
       "target": "с+амого",
@@ -111189,7 +110211,7 @@
       "frequency": 2100,
       "lemma": "сам",
       "stress_pos": 4,
-      "lemma_def": [  ]
+      "lemma_def": [ "Возвратное,  часто заменяет или уточняет одушевленное лицо" ]
     },
     {
       "target": "с+амой",
@@ -111229,7 +110251,7 @@
       "frequency": 2100,
       "lemma": "сам",
       "stress_pos": 6,
-      "lemma_def": [ "Личное действие субъекта." ]
+      "lemma_def": [ "Возвратное, часто 'самому себе'" ]
     },
     {
       "target": "с+амому",
@@ -111249,7 +110271,7 @@
       "frequency": 2100,
       "lemma": "сам",
       "stress_pos": 4,
-      "lemma_def": [ "Подчеркивает самостоятельность женщины или предмета ж.р." ]
+      "lemma_def": [ "Возвратное" ]
     },
     {
       "target": "с+амою",
@@ -122187,78 +121209,6 @@
       "lemma_def": []
     }
   ],
-  "стает": [
-    {
-      "target": "ст+ает",
-      "ref": "сч",
-      "gram_def": [
-        "гл сов непер буд ед 3-е"
-      ],
-      "frequency": 3,
-      "lemma": "стаять",
-      "stress_pos": 3,
-      "lemma_def": []
-    },
-    {
-      "target": "ста+ет",
-      "ref": "оч",
-      "gram_def": [
-        "гл несов непер наст ед 3-е"
-      ],
-      "frequency": 2,
-      "lemma": "ставать",
-      "stress_pos": 4,
-      "lemma_def": []
-    }
-  ],
-  "стаете": [
-    {
-      "target": "ст+аете",
-      "ref": "сч",
-      "gram_def": [
-        "гл сов непер буд мн 2-е"
-      ],
-      "frequency": 3,
-      "lemma": "стаять",
-      "stress_pos": 3,
-      "lemma_def": []
-    },
-    {
-      "target": "ста+ете",
-      "ref": "оч",
-      "gram_def": [
-        "гл несов непер наст мн 2-е"
-      ],
-      "frequency": 2,
-      "lemma": "ставать",
-      "stress_pos": 4,
-      "lemma_def": []
-    }
-  ],
-  "стаешь": [
-    {
-      "target": "ст+аешь",
-      "ref": "сч",
-      "gram_def": [
-        "гл сов непер буд ед 2-е"
-      ],
-      "frequency": 3,
-      "lemma": "стаять",
-      "stress_pos": 3,
-      "lemma_def": []
-    },
-    {
-      "target": "ста+ешь",
-      "ref": "оч",
-      "gram_def": [
-        "гл несов непер наст ед 2-е"
-      ],
-      "frequency": 2,
-      "lemma": "ставать",
-      "stress_pos": 4,
-      "lemma_def": []
-    }
-  ],
   "старин": [
     {
       "target": "стар+ин",
@@ -123698,17 +122648,6 @@
     }
   ],
   "стенам": [
-    {
-      "target": "ст+енам",
-      "ref": "сч",
-      "gram_def": [
-        "сущ неод мн дат"
-      ],
-      "frequency": 250,
-      "lemma": "стена",
-      "stress_pos": 3,
-      "lemma_def": []
-    },
     {
       "target": "стен+ам",
       "ref": "оч",
@@ -136954,19 +135893,6 @@
       "lemma_def": []
     }
   ],
-  "усталей": [
-    {
-      "target": "+усталей",
-      "ref": "сч",
-      "gram_def": [
-        "сущ неод мн род"
-      ],
-      "frequency": 10,
-      "lemma": "усталь",
-      "stress_pos": 1,
-      "lemma_def": []
-    }
-  ],
   "устали": [
     {
       "target": "уст+али",
@@ -146123,7 +145049,7 @@
       "frequency": 34,
       "lemma": "чудный",
       "stress_pos": 2,
-      "lemma_def": []
+      "lemma_def": ["очень красивые"]
     },
     {
       "target": "чудн+ые",
@@ -146135,7 +145061,7 @@
       "frequency": 29,
       "lemma": "чудной",
       "stress_pos": 5,
-      "lemma_def": []
+      "lemma_def": ["забавные, необычные"]
     }
   ],
   "чудным": [
