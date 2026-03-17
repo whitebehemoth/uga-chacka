@@ -26,6 +26,7 @@ public partial class MainWindow : Window
     private readonly AppSettings _settings;
 
     private string? _currentFilePath;
+    private string? _currentFilePathToSaveText;
     private List<ResolvedHomograph> _allHomographs = [];
     private List<ResolvedHomograph> _lowConfidence = [];
     private int _currentHomographIndex = -1;
@@ -151,27 +152,20 @@ public partial class MainWindow : Window
 
     private void Save_Click(object sender, ExecutedRoutedEventArgs e)
     {
-
-        string tarrget;
-        if (_currentFilePath == null)
+        if (_currentFilePathToSaveText == null)
         {
             var dlg = new SaveFileDialog
             {
                 Title = "Сохранить текстовый файл",
-                Filter = "Текстовые файлы (*.txt)|*.txt|Все файлы (*.*)|*.*"
+                Filter = "Текстовые файлы (*.txt)|*.txt|Все файлы (*.*)|*.*",
+                FileName = Path.GetFileNameWithoutExtension(_currentFilePath) + ".txt",
+                DefaultDirectory = _settings.General.TargetFolder
             };
-            if (dlg.ShowDialog() != true) return;
-            tarrget = dlg.FileName;
+            if (dlg.ShowDialog() != true || string.IsNullOrEmpty(dlg.FileName)) return;
+            _currentFilePathToSaveText = dlg.FileName;
         }
-        else
-        {
-            if (!Directory.Exists(_settings.General.TargetFolder))
-            {
-                Directory.CreateDirectory(_settings.General.TargetFolder);
-            }
-            tarrget = Path.Combine(_settings.General.TargetFolder, Path.GetFileName(_currentFilePath));
-        }
-        File.WriteAllText(tarrget, GetPlainText(), Encoding.UTF8);
+        
+        File.WriteAllText(_currentFilePathToSaveText, GetPlainText(), Encoding.UTF8);
     }
 
     private void Exit_Click(object sender, RoutedEventArgs e) => Close();
