@@ -70,7 +70,12 @@ public static class ResolutionService
                 Confidence = choice.Confidence,
                 OriginalPosition = match.Start,
                 OriginalLength = match.Length,
-                Variants = match.Variants.OrderBy(v => v.Target.IndexOf('+')).ToList()
+                Variants = match.Variants
+                .GroupBy(v => v.Target)
+                .Select(g => g.First())
+                .OrderBy(v => v.Target.IndexOf('+'))
+                .ThenBy(v => v.Target.IndexOf('ё'))
+                .ToList()
             };
         }
 

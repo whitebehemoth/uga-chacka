@@ -45,8 +45,10 @@
                 <MenuItem Header="_Выход" Click="Exit_Click"/>
             </MenuItem>
             <MenuItem Header="Обработка текста">
-                <MenuItem Header="Ударения в омографы" Click="ResolveHomographs_Click"/>
+                <MenuItem Header="Ударения в омографы через LLM" Click="ResolveHomographs_Click"/>
                 <MenuItem Header="Ударения в остальные слова" Click="ApplyStress_Click"/>
+                <MenuItem Header="Обновить подсветку омографов" Click="RescanHomographs_Click"/>
+                <MenuItem Header="Подсветить неизвестные слова" Click="RescanNostress_Click"/>
             </MenuItem>
             <MenuItem Header="Правка">
                 <MenuItem Header="Найти / Заменить" Command="ApplicationCommands.Find" InputGestureText="Ctrl+F"/>

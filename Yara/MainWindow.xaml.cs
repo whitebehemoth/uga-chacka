@@ -282,7 +282,7 @@ public partial class MainWindow : Window
 
             _allHomographs.Clear();
             TextEditor.TextArea.TextView.LineTransformers.Clear();
-            
+
             var docMatches = matches.Select(m => new DocumentMatch { Start = m.Start, Length = m.Length }).ToList();
             var matchColorizer = new MatchColorizer(docMatches);
             _colorizer = new HomographColorizer(_allHomographs, () => _settings.Homograph.Threshold);
@@ -318,7 +318,7 @@ public partial class MainWindow : Window
                     docMatches[j].Start += currentShift;
                 }
                 shift += currentShift;
-                
+
                 // Hide from match colorizer
                 docMatches[i].Length = 0;
 
@@ -335,6 +335,8 @@ public partial class MainWindow : Window
             StatusInfo.Text = _lowConfidence.Count > 0
                 ? $"Низкая уверенность: {_lowConfidence.Count}. Используйте навигацию."
                 : "Все омографы разрешены.";
+
+            MessageBox.Show("Корректная навигация по омографам c учётом вероятностей от LLM\r\nгарантируется только при использовании встроенной навигации", "Внимание", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
         catch (OperationCanceledException)
         {
@@ -423,7 +425,16 @@ public partial class MainWindow : Window
     }
 
     // ── Accent dictionaries ──────────────────────────────────────────────────
+    
 
+    private void RescanHomographs_Click(object sender, RoutedEventArgs e)
+    {
+
+    }
+    private void RescanNostress_Click(object sender, RoutedEventArgs e)
+    {
+
+    }
     private void ApplyStress_Click(object sender, RoutedEventArgs e)
     {
         var text = GetPlainText();
@@ -461,7 +472,6 @@ public partial class MainWindow : Window
 
         var updated = AccentService.ApplyStressMarks(text, stressMap);
         SetPlainText(updated);
-        ResetHomographState();
     }
 
     // ── Navigation ───────────────────────────────────────────────────────────
@@ -715,7 +725,6 @@ public partial class MainWindow : Window
         if (!string.IsNullOrEmpty(selection) && selectedMatch.Success && selectedMatch.Index == 0 && selectedMatch.Length == selection.Length)
         {
             TextEditor.SelectedText = selectedMatch.Result(replacement);
-            ResetHomographState();
             return;
         }
 
@@ -769,7 +778,6 @@ public partial class MainWindow : Window
         }
 
         SetPlainText(updated);
-        ResetHomographState();
         await UpdateStatisticsAsync(updated);
 
         MessageBox.Show($"Выполнено замен: {replacements}.", "Заменить всё",
@@ -925,7 +933,6 @@ public partial class MainWindow : Window
         }
 
         SetPlainText(text);
-        ResetHomographState();
         await UpdateStatisticsAsync(text);
     }
 
@@ -1195,7 +1202,7 @@ public partial class MainWindow : Window
         TextEditor.TextArea.TextView.LineTransformers.Clear();
         _suppressTextChanged = false;
     }
-
+ 
     private void ResetHomographState()
     {
         _allHomographs = [];
