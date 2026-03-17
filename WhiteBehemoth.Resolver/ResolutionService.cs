@@ -18,6 +18,7 @@ public static class ResolutionService
         [EnumeratorCancellation] CancellationToken ct = default)
     {
         var runningTasks = new Task<ResolvedHomograph>[matches.Count];
+        var nextYieldIndex = 0;
 
         async Task<ResolvedHomograph> ResolveSingleAsync(HomographMatch match, int index)
         {
@@ -78,16 +79,42 @@ public static class ResolutionService
             ct.ThrowIfCancellationRequested();
             runningTasks[i] = ResolveSingleAsync(matches[i], i);
 
+            while (nextYieldIndex <= i && runningTasks[nextYieldIndex].IsCompleted)
+            {
+                ct.ThrowIfCancellationRequested();
+                yield return await runningTasks[nextYieldIndex];
+                nextYieldIndex++;
+            }
+
             if (i < matches.Count - 1 && nextRequestInMs > 0)
             {
-                await Task.Delay(nextRequestInMs, ct);
+                var throttleDelay = Task.Delay(nextRequestInMs, ct);
+                while (!throttleDelay.IsCompleted)
+                {
+                    ct.ThrowIfCancellationRequested();
+
+                    if (nextYieldIndex <= i && runningTasks[nextYieldIndex].IsCompleted)
+                    {
+                        yield return await runningTasks[nextYieldIndex];
+                        nextYieldIndex++;
+                        continue;
+                    }
+
+                    if (nextYieldIndex <= i)
+                        await Task.WhenAny(throttleDelay, runningTasks[nextYieldIndex]);
+                    else
+                        await throttleDelay;
+                }
+
+                await throttleDelay;
             }
         }
 
-        for (int i = 0; i < runningTasks.Length; i++)
+        while (nextYieldIndex < runningTasks.Length)
         {
             ct.ThrowIfCancellationRequested();
-            yield return await runningTasks[i];
+            yield return await runningTasks[nextYieldIndex];
+            nextYieldIndex++;
         }
     }
 }
