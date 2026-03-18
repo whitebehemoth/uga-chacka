@@ -40980,17 +40980,6 @@
       "lemma_def": []
     },
     {
-      "target": "кр+угом",
-      "ref": "оч",
-      "gram_def": [
-        "нар опред кач"
-      ],
-      "frequency": 66,
-      "lemma": "кругом",
-      "stress_pos": 3,
-      "lemma_def": []
-    },
-    {
       "target": "круг+ом",
       "ref": "мч",
       "gram_def": [
@@ -68750,55 +68739,6 @@
       "lemma_def": []
     }
   ],
-  "паре": [
-    {
-      "target": "п+аре",
-      "ref": "сч",
-      "gram_def": [
-        "сущ неод ед жен дат",
-        "сущ неод ед жен пр"
-      ],
-      "frequency": 120,
-      "lemma": "пара",
-      "stress_pos": 2,
-      "lemma_def": []
-    },
-    {
-      "target": "пар+е",
-      "ref": "оч",
-      "gram_def": [
-        "сущ неод ед жен дат",
-        "сущ неод ед жен пр"
-      ],
-      "frequency": 120,
-      "lemma": "пара",
-      "stress_pos": 4,
-      "lemma_def": []
-    },
-    {
-      "target": "п+аре",
-      "ref": "мч",
-      "gram_def": [
-        "сущ неод ед муж пр"
-      ],
-      "frequency": 120,
-      "lemma": "пар",
-      "stress_pos": 2,
-      "lemma_def": []
-    },
-    {
-      "target": "п+аре",
-      "ref": "ср",
-      "gram_def": [
-        "сущ одуш ед муж дат",
-        "сущ одуш ед муж пр"
-      ],
-      "frequency": 13,
-      "lemma": "паря",
-      "stress_pos": 2,
-      "lemma_def": []
-    }
-  ],
   "пари": [
     {
       "target": "п+ари",
@@ -73664,7 +73604,8 @@
       "target": "п+еред",
       "ref": "сч",
       "gram_def": [
-        "предл тв"
+        "предл тв",
+        "предл вин"
       ],
       "frequency": 590,
       "lemma": "перед",
@@ -73672,25 +73613,14 @@
       "lemma_def": []
     },
     {
-      "target": "п+еред",
-      "ref": "оч",
-      "gram_def": [
-        "предл вин"
-      ],
-      "frequency": 590,
-      "lemma": "*перед",
-      "stress_pos": 2,
-      "lemma_def": []
-    },
-    {
-      "target": "пер+ед",
+      "target": "пер+ёд",
       "ref": "мч",
       "gram_def": [
         "сущ неод ед муж вин",
         "сущ неод ед муж им"
       ],
       "frequency": 580,
-      "lemma": "перед",
+      "lemma": "перёд",
       "stress_pos": 4,
       "lemma_def": []
     }
