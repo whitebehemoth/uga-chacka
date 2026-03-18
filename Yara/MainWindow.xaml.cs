@@ -26,6 +26,7 @@ public partial class MainWindow : Window
     private readonly AppSettings _settings;
 
     private string? _currentFilePath;
+    private string? _currentFilePathToSaveText;
     private List<ResolvedHomograph> _allHomographs = [];
     private List<ResolvedHomograph> _lowConfidence = [];
     private int _currentHomographIndex = -1;
@@ -151,27 +152,20 @@ public partial class MainWindow : Window
 
     private void Save_Click(object sender, ExecutedRoutedEventArgs e)
     {
-
-        string tarrget;
-        if (_currentFilePath == null)
+        if (_currentFilePathToSaveText == null)
         {
             var dlg = new SaveFileDialog
             {
                 Title = "Сохранить текстовый файл",
-                Filter = "Текстовые файлы (*.txt)|*.txt|Все файлы (*.*)|*.*"
+                Filter = "Текстовые файлы (*.txt)|*.txt|Все файлы (*.*)|*.*",
+                FileName = Path.GetFileNameWithoutExtension(_currentFilePath) + ".txt",
+                DefaultDirectory = _settings.General.TargetFolder
             };
-            if (dlg.ShowDialog() != true) return;
-            tarrget = dlg.FileName;
+            if (dlg.ShowDialog() != true || string.IsNullOrEmpty(dlg.FileName)) return;
+            _currentFilePathToSaveText = dlg.FileName;
         }
-        else
-        {
-            if (!Directory.Exists(_settings.General.TargetFolder))
-            {
-                Directory.CreateDirectory(_settings.General.TargetFolder);
-            }
-            tarrget = Path.Combine(_settings.General.TargetFolder, Path.GetFileName(_currentFilePath));
-        }
-        File.WriteAllText(tarrget, GetPlainText(), Encoding.UTF8);
+        
+        File.WriteAllText(_currentFilePathToSaveText, GetPlainText(), Encoding.UTF8);
     }
 
     private void Exit_Click(object sender, RoutedEventArgs e) => Close();
@@ -288,7 +282,7 @@ public partial class MainWindow : Window
 
             _allHomographs.Clear();
             TextEditor.TextArea.TextView.LineTransformers.Clear();
-            
+
             var docMatches = matches.Select(m => new DocumentMatch { Start = m.Start, Length = m.Length }).ToList();
             var matchColorizer = new MatchColorizer(docMatches);
             _colorizer = new HomographColorizer(_allHomographs, () => _settings.Homograph.Threshold);
@@ -306,6 +300,8 @@ public partial class MainWindow : Window
                 _resolutionCts.Token))
             {
                 resolved.AbsolutePosition = resolved.OriginalPosition + shift;
+                var originalWord = TextEditor.Document.GetText(resolved.AbsolutePosition, resolved.OriginalLength);
+                resolved.StressedWord = PreserveFirstLetterCase(originalWord, resolved.StressedWord);
                 resolved.Length = resolved.StressedWord.Length;
 
                 _allHomographs.Add(resolved);
@@ -322,7 +318,7 @@ public partial class MainWindow : Window
                     docMatches[j].Start += currentShift;
                 }
                 shift += currentShift;
-                
+
                 // Hide from match colorizer
                 docMatches[i].Length = 0;
 
@@ -339,6 +335,8 @@ public partial class MainWindow : Window
             StatusInfo.Text = _lowConfidence.Count > 0
                 ? $"Низкая уверенность: {_lowConfidence.Count}. Используйте навигацию."
                 : "Все омографы разрешены.";
+
+            MessageBox.Show("Корректная навигация по омографам c учётом вероятностей от LLM\r\nгарантируется только при использовании встроенной навигации", "Внимание", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
         catch (OperationCanceledException)
         {
@@ -427,7 +425,103 @@ public partial class MainWindow : Window
     }
 
     // ── Accent dictionaries ──────────────────────────────────────────────────
+    
 
+    private void RescanHomographs_Click(object sender, RoutedEventArgs e)
+    {
+        var text = GetPlainText();
+        if (string.IsNullOrWhiteSpace(text))
+            return;
+
+        var valid = new List<ResolvedHomograph>(_allHomographs.Count);
+        foreach (var h in _allHomographs)
+        {
+            if (h.AbsolutePosition < 0 || h.AbsolutePosition >= text.Length)
+                continue;
+
+            var expected = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            if (!string.IsNullOrWhiteSpace(h.StressedWord))
+                expected.Add(h.StressedWord);
+            foreach (var v in h.Variants)
+            {
+                if (!string.IsNullOrWhiteSpace(v.Target))
+                    expected.Add(v.Target);
+            }
+
+            if (expected.Count == 0)
+                continue;
+
+            if (TryMatchAt(h.AbsolutePosition, expected, text, out int matchedLength))
+            {
+                h.Length = matchedLength;
+                valid.Add(h);
+            }
+        }
+
+        _allHomographs = valid;
+        ShowResolvedText(text, _allHomographs, _settings.Homograph.Threshold);
+        StatusHomographCount.Text = _allHomographs.Count.ToString();
+        StatusInfo.Text = _allHomographs.Count > 0
+            ? $"Пересканировано омографов: {_allHomographs.Count}"
+            : "Омографы по текущим позициям не найдены.";
+    }
+    private void RescanNostress_Click(object sender, RoutedEventArgs e)
+    {
+        var text = GetPlainText();
+        if (string.IsNullOrWhiteSpace(text))
+            return;
+
+        var wordMatches = new Regex(@"[а-яА-ЯёЁ+]+", RegexOptions.CultureInvariant).Matches(text);
+        if (wordMatches.Count == 0)
+            return;
+
+        var wordsToCheck = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (Match m in wordMatches)
+        {
+            var normalized = m.Value.ToLowerInvariant().Replace("ё", "е");
+            if (normalized.Length > 2 && !normalized.Contains("+"))
+                wordsToCheck.Add(normalized);
+        }
+
+        var knownAccentWords = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var rawPath in _settings.Homograph.DicAPath)
+        {
+            var path = ResolvePath(rawPath);
+            if (!File.Exists(path)) continue;
+
+            foreach (var entry in AccentService.LoadStressEntries(path, wordsToCheck))
+                knownAccentWords.Add(entry.Key);
+        }
+
+        var unknownMatches = new List<DocumentMatch>();
+        foreach (Match m in wordMatches)
+        {
+            if (m.Value.Contains('+'))
+                continue;
+
+            var normalized = m.Value.ToLowerInvariant().Replace("ё", "е");
+            if (normalized.Length < 3 || normalized.Contains("+"))
+                continue;
+
+            if (!knownAccentWords.Contains(normalized))
+                unknownMatches.Add(new DocumentMatch { Start = m.Index, Length = m.Length });
+        }
+
+        TextEditor.TextArea.TextView.LineTransformers.Clear();
+        if (_allHomographs.Count > 0)
+        {
+            _colorizer = new HomographColorizer(_allHomographs, () => _settings.Homograph.Threshold);
+            TextEditor.TextArea.TextView.LineTransformers.Add(_colorizer);
+        }
+
+        if (unknownMatches.Count > 0)
+            TextEditor.TextArea.TextView.LineTransformers.Add(new MatchColorizer(unknownMatches));
+
+        TextEditor.TextArea.TextView.Redraw();
+        StatusInfo.Text = unknownMatches.Count > 0
+            ? $"Неизвестных слов: {unknownMatches.Count}"
+            : "Неизвестных слов не найдено.";
+    }
     private void ApplyStress_Click(object sender, RoutedEventArgs e)
     {
         var text = GetPlainText();
@@ -465,7 +559,6 @@ public partial class MainWindow : Window
 
         var updated = AccentService.ApplyStressMarks(text, stressMap);
         SetPlainText(updated);
-        ResetHomographState();
     }
 
     // ── Navigation ───────────────────────────────────────────────────────────
@@ -531,6 +624,25 @@ public partial class MainWindow : Window
 
         var key = e.Key == Key.System ? e.SystemKey : e.Key;
         if (key is Key.LeftAlt or Key.RightAlt) return;
+
+        if (FindReplaceBar.Visibility == Visibility.Visible && FindReplaceBar.IsKeyboardFocusWithin)
+        {
+            switch (key)
+            {
+                case Key.E:
+                    RegexCheckBox.IsChecked = RegexCheckBox.IsChecked != true;
+                    e.Handled = true;
+                    return;
+                case Key.W:
+                    WholeWordCheckBox.IsChecked = WholeWordCheckBox.IsChecked != true;
+                    e.Handled = true;
+                    return;
+                case Key.C:
+                    MatchCaseCheckBox.IsChecked = MatchCaseCheckBox.IsChecked != true;
+                    e.Handled = true;
+                    return;
+            }
+        }
 
         switch (key)
         {
@@ -649,17 +761,32 @@ public partial class MainWindow : Window
         var pattern = FindTextBox.Text;
         if (string.IsNullOrEmpty(pattern)) return;
 
+        Regex searchRegex;
+        try
+        {
+            searchRegex = CreateFindRegex(pattern);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Ошибка шаблона поиска:\n{ex.Message}", "Поиск",
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
         var text = GetSearchText();
         int startIndex = GetCursorIndex();
-        int index = text.IndexOf(pattern, startIndex, StringComparison.CurrentCulture);
-        if (index < 0)
+        var match = searchRegex.Match(text, startIndex);
+        if (!match.Success && startIndex > 0)
+            match = searchRegex.Match(text, 0);
+
+        if (!match.Success)
         {
             MessageBox.Show("Совпадения не найдены.", "Поиск",
                 MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
-        SelectInText(index, pattern.Length);
+        SelectInText(match.Index, match.Length);
     }
 
     private void ReplaceNext_Click(object sender, RoutedEventArgs e)
@@ -667,26 +794,121 @@ public partial class MainWindow : Window
         var pattern = FindTextBox.Text;
         if (string.IsNullOrEmpty(pattern)) return;
 
+        Regex searchRegex;
+        try
+        {
+            searchRegex = CreateFindRegex(pattern);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Ошибка шаблона поиска:\n{ex.Message}", "Замена",
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
         var replacement = ReplaceTextBox.Text;
         var selection = TextEditor.SelectedText;
-        if (selection == pattern)
+        var selectedMatch = searchRegex.Match(selection);
+        if (!string.IsNullOrEmpty(selection) && selectedMatch.Success && selectedMatch.Index == 0 && selectedMatch.Length == selection.Length)
         {
-            TextEditor.SelectedText = replacement;
-            ResetHomographState();
+            TextEditor.SelectedText = selectedMatch.Result(replacement);
             return;
         }
 
         var text = GetSearchText();
         int startIndex = GetCursorIndex();
-        int index = text.IndexOf(pattern, startIndex, StringComparison.CurrentCulture);
-        if (index < 0)
+        var match = searchRegex.Match(text, startIndex);
+        if (!match.Success && startIndex > 0)
+            match = searchRegex.Match(text, 0);
+
+        if (!match.Success)
         {
             MessageBox.Show("Совпадения не найдены.", "Замена",
                 MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
-        SelectInText(index, pattern.Length);
+        SelectInText(match.Index, match.Length);
+    }
+
+    private async void ReplaceAll_Click(object sender, RoutedEventArgs e)
+    {
+        var pattern = FindTextBox.Text;
+        if (string.IsNullOrEmpty(pattern)) return;
+
+        Regex searchRegex;
+        try
+        {
+            searchRegex = CreateFindRegex(pattern);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Ошибка шаблона поиска:\n{ex.Message}", "Заменить всё",
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        var text = GetSearchText();
+        var replacement = ReplaceTextBox.Text;
+        int replacements = 0;
+        var updated = searchRegex.Replace(text, m =>
+        {
+            replacements++;
+            return m.Result(replacement);
+        });
+
+        if (replacements == 0)
+        {
+            MessageBox.Show("Совпадения не найдены.", "Заменить всё",
+                MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        SetPlainText(updated);
+        await UpdateStatisticsAsync(updated);
+
+        MessageBox.Show($"Выполнено замен: {replacements}.", "Заменить всё",
+            MessageBoxButton.OK, MessageBoxImage.Information);
+        StatusInfo.Text = $"Заменено: {replacements}";
+    }
+
+    private Regex CreateFindRegex(string pattern)
+    {
+        var effectivePattern = RegexCheckBox.IsChecked == true
+            ? pattern
+            : Regex.Escape(pattern);
+
+        if (WholeWordCheckBox.IsChecked == true)
+            effectivePattern = $@"(?<![\p{{L}}\p{{Nd}}_+])(?:{effectivePattern})(?![\p{{L}}\p{{Nd}}_+])";
+
+        var options = RegexOptions.Multiline;
+        if (MatchCaseCheckBox.IsChecked != true)
+            options |= RegexOptions.IgnoreCase;
+
+        return new Regex(effectivePattern, options);
+    }
+
+    private static string PreserveFirstLetterCase(string original, string replacement)
+    {
+        if (string.IsNullOrEmpty(original) || string.IsNullOrEmpty(replacement))
+            return replacement;
+
+        var originalFirst = original[0];
+        var replacementFirst = replacement[0];
+        if (!char.IsLetter(replacementFirst))
+            return replacement;
+
+        if (char.IsUpper(originalFirst))
+        {
+            if (replacementFirst == '+')
+            {
+                return replacementFirst + char.ToUpper(replacement[1], CultureInfo.CurrentCulture) + replacement[2..];
+            }
+            else 
+                return char.ToUpper(replacementFirst, CultureInfo.CurrentCulture) + replacement[1..];
+        }
+
+        return replacement;
     }
 
     private string GetSearchText()
@@ -773,8 +995,22 @@ public partial class MainWindow : Window
 
         try
         {
+            var stats = new List<string>(selected.Count);
             foreach (var rule in selected)
-                text = Regex.Replace(text, rule.Pattern, rule.Replacement, RegexOptions.Multiline);
+            {
+                var regex = new Regex(rule.Pattern, RegexOptions.Multiline);
+                int count = regex.Matches(text).Count;
+                text = regex.Replace(text, rule.Replacement);
+                stats.Add($"• {rule.Description}: {count}");
+            }
+
+            MessageBox.Show(
+                "Очистка завершена:\n\n" + string.Join(Environment.NewLine, stats),
+                "Очистка",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+
+            StatusInfo.Text = "Очистка: " + string.Join("; ", stats.Select(s => s[2..]));
         }
         catch (Exception ex)
         {
@@ -784,7 +1020,6 @@ public partial class MainWindow : Window
         }
 
         SetPlainText(text);
-        ResetHomographState();
         await UpdateStatisticsAsync(text);
     }
 
@@ -1054,7 +1289,7 @@ public partial class MainWindow : Window
         TextEditor.TextArea.TextView.LineTransformers.Clear();
         _suppressTextChanged = false;
     }
-
+ 
     private void ResetHomographState()
     {
         _allHomographs = [];

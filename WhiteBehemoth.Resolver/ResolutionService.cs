@@ -53,9 +53,11 @@ public static class ResolutionService
                 }
             }
 
-            var chosen = match.Variants.FirstOrDefault(v => choice.Ref.Contains(v.Target) && choice.Lemma.Contains(v.Lemma));
+            var chosen = match.Variants.FirstOrDefault(v => choice.Ref.Contains(v.Ref) && (string.IsNullOrEmpty(choice.Lemma) || choice.Lemma.Contains(v.Lemma)));
             if (chosen == null)
             {
+                choice.Reasoning = "Ошибка LLM, вариант не найден";
+                choice.Confidence = 0;
                 chosen = match.Variants[0];
             }
 
@@ -68,7 +70,12 @@ public static class ResolutionService
                 Confidence = choice.Confidence,
                 OriginalPosition = match.Start,
                 OriginalLength = match.Length,
-                Variants = match.Variants.OrderBy(v => v.Target.IndexOf('+')).ToList()
+                Variants = match.Variants
+                .GroupBy(v => v.Target)
+                .Select(g => g.First())
+                .OrderBy(v => v.Target.IndexOf('+'))
+                .ThenBy(v => v.Target.IndexOf('ё'))
+                .ToList()
             };
         }
 
