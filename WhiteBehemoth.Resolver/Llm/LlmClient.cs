@@ -30,7 +30,8 @@ public sealed class OpenAiLlmClient : ILlmClient, IDisposable
             {
                 new { role = "system", content = settings.SystemPrompt },
                 new { role = "user", content = userPrompt }
-            }
+            },
+            reasoning_effort = "minimal" 
         };
         JsonElement json;
         try
