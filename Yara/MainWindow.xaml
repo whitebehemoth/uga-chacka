@@ -49,6 +49,8 @@
                 <MenuItem Header="Ударения в остальные слова" Click="ApplyStress_Click"/>
                 <MenuItem Header="Обновить подсветку омографов" Click="RescanHomographs_Click"/>
                 <MenuItem Header="Подсветить неизвестные слова" Click="RescanNostress_Click"/>
+                <Separator/>
+                <MenuItem Header="Снять форматирование" Click="ClearFormatting_Click"/>
             </MenuItem>
             <MenuItem Header="Правка">
                 <MenuItem Header="Найти / Заменить" Command="ApplicationCommands.Find" InputGestureText="Ctrl+F"/>
@@ -97,7 +99,7 @@
 
                     <!-- Toolbar: threshold + homograph nav + clean rules -->
                     <ToolBarTray Grid.Row="0" IsLocked="False">
-                        <ToolBar x:Name="EditHomo">
+                        <ToolBar x:Name="EditHomo" FocusManager.IsFocusScope="False">
                             <TextBlock Text="Порог для проверки: " VerticalAlignment="Center"/>
                             <TextBlock Text="{Binding Homograph.Threshold, StringFormat='{}{0:F0}%'}" VerticalAlignment="Center" MinWidth="30"/>
                             <Slider x:Name="HomographThreshold"
@@ -152,7 +154,7 @@
                     <!-- Toolbar: find / replace (hidden by default) -->
                     <ToolBarTray Grid.Row="1" IsLocked="False"
                                  x:Name="FindReplaceBar" Visibility="Visible">
-                        <ToolBar>
+                        <ToolBar FocusManager.IsFocusScope="False">
                             <TextBlock Text="Найти: " VerticalAlignment="Center"/>
                             <TextBox x:Name="FindTextBox" Width="160"
                                      TabIndex="5"
@@ -188,7 +190,7 @@
                     </ToolBarTray>
 
                     <!-- Text area with placeholder -->
-                    <Grid Grid.Row="2">
+                    <Grid Grid.Row="2" KeyboardNavigation.TabNavigation="None">
                         <avalonedit:TextEditor x:Name="TextEditor"
                                      VerticalScrollBarVisibility="Auto"
                                      HorizontalScrollBarVisibility="Auto"
@@ -196,8 +198,16 @@
                                      WordWrap="True"
                                      Padding="6"
                                      IsTabStop="False"
+                                     KeyboardNavigation.TabNavigation="None"
                                      TextChanged="TextEditor_TextChanged"
-                                     PreviewMouseWheel="Text_PreviewMouseWheel"/>
+                                     PreviewMouseWheel="Text_PreviewMouseWheel">
+                            <avalonedit:TextEditor.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="Снять форматирование" Click="ClearFormatting_Click"/>
+                                    <MenuItem Header="Ударение в корень" Click="RootStress_Click"/>
+                                </ContextMenu>
+                            </avalonedit:TextEditor.ContextMenu>
+                        </avalonedit:TextEditor>
                     </Grid>
                 </Grid>
             </TabItem>

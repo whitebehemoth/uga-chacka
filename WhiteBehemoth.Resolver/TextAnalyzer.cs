@@ -5,7 +5,7 @@ namespace WhiteBehemoth.Resolver;
 
 public static partial class TextAnalyzer
 {
-    [GeneratedRegex(@"[а-яА-ЯёЁ]+")]
+    [GeneratedRegex(@"[а-яА-ЯёЁ\+]+")]
     public static partial Regex WordRegex();
 
     [GeneratedRegex(@"[.!?…]+|\r?\n")]

@@ -1225,6 +1225,49 @@ public partial class MainWindow : Window
             ResetHomographState();
     }
 
+    private void ClearFormatting_Click(object sender, RoutedEventArgs e)
+    {
+        TextEditor.TextArea.TextView.LineTransformers.Clear();
+    }
+
+    private void RootStress_Click(object sender, RoutedEventArgs e)
+    {
+        string prefix = TextEditor.SelectedText;
+        if (string.IsNullOrEmpty(prefix))
+        {
+            int offset = TextEditor.CaretOffset;
+            string text = TextEditor.Text;
+            int start = offset;
+
+            while (start > 0)
+            {
+                char c = text[start - 1];
+                if (!char.IsLetter(c) && c != '+' && c != '\u0301')
+                    break;
+                start--;
+            }
+            if (start < offset)
+            {
+                prefix = text.Substring(start, offset - start);
+            }
+        }
+
+        if (!string.IsNullOrEmpty(prefix))
+        {
+            string cleanPrefix = prefix.Replace("+", "").Replace("\u0301", "");
+            FindTextBox.Text = @"\b" + cleanPrefix + @"(\w*)\b";
+            ReplaceTextBox.Text = prefix + "$1";
+            RegexCheckBox.IsChecked = true;
+
+            FindReplaceBar.Visibility = Visibility.Visible;
+            if (FindReplaceBar.Visibility == Visibility.Visible)
+            {
+                FindTextBox.Focus();
+                FindTextBox.Select(FindTextBox.Text.Length, 0); // Focus at end of text
+            }
+        }
+    }
+
     private void TextDocument_Changed(object? sender, DocumentChangeEventArgs e)
     {
         if (_suppressTextChanged || _allHomographs.Count == 0) return;

@@ -69530,7 +69530,7 @@
       "frequency": 6,
       "lemma": "парной",
       "stress_pos": 5,
-      "lemma_def": []
+      "lemma_def": ["тёплый, свежий"]
     },
     {
       "target": "п+арного",
@@ -69543,7 +69543,7 @@
       "frequency": 6,
       "lemma": "парный",
       "stress_pos": 2,
-      "lemma_def": []
+      "lemma_def": ["составляющий пару"]
     }
   ],
   "парное": [
@@ -84254,7 +84254,7 @@
       "frequency": 190,
       "lemma": "пола",
       "stress_pos": 4,
-      "lemma_def": []
+      "lemma_def": ["часть одежды"]
     }
   ],
   "полудне": [
@@ -113786,35 +113786,6 @@
       ]
     }
   ],
-  "скалы": [
-    {
-      "target": "ск+алы",
-      "ref": "сч",
-      "gram_def": [
-        "сущ неод мн вин",
-        "сущ неод мн им"
-      ],
-      "frequency": 41,
-      "lemma": "скала",
-      "stress_pos": 3,
-      "lemma_def": [
-        "музыкальная гамма"
-      ]
-    },
-    {
-      "target": "скал+ы",
-      "ref": "оч",
-      "gram_def": [
-        "сущ неод ед жен род"
-      ],
-      "frequency": 41,
-      "lemma": "скала",
-      "stress_pos": 5,
-      "lemma_def": [
-        "утес"
-      ]
-    }
-  ],
   "скачка": [
     {
       "target": "скачк+а",
@@ -123698,52 +123669,6 @@
       "lemma_def": []
     }
   ],
-  "стоя": [
-    {
-      "target": "ст+оя",
-      "ref": "сч",
-      "gram_def": [
-        "дееп несов непер наст"
-      ],
-      "frequency": 800,
-      "lemma": "стоять",
-      "stress_pos": 3,
-      "lemma_def": []
-    },
-    {
-      "target": "сто+я",
-      "ref": "оч",
-      "gram_def": [
-        "дееп несов непер наст"
-      ],
-      "frequency": 800,
-      "lemma": "стоять",
-      "stress_pos": 4,
-      "lemma_def": []
-    },
-    {
-      "target": "ст+оя",
-      "ref": "мч",
-      "gram_def": [
-        "дееп несов непер наст"
-      ],
-      "frequency": 440,
-      "lemma": "стоить",
-      "stress_pos": 3,
-      "lemma_def": []
-    },
-    {
-      "target": "ст+оя",
-      "ref": "ср",
-      "gram_def": [
-        "нар опред спос"
-      ],
-      "frequency": 27,
-      "lemma": "стоя",
-      "stress_pos": 3,
-      "lemma_def": []
-    }
-  ],
   "стоят": [
     {
       "target": "сто+ят",
@@ -129816,14 +129741,14 @@
   ],
   "теплом": [
     {
-      "target": "т+еплом",
+      "target": "т+ёплом",
       "ref": "сч",
       "gram_def": [
         "прл ед муж пр",
         "прл ед ср пр"
       ],
       "frequency": 150,
-      "lemma": "теплый",
+      "lemma": "тёплый",
       "stress_pos": 2,
       "lemma_def": []
     },
@@ -132179,7 +132104,7 @@
       "frequency": 18,
       "lemma": "трус",
       "stress_pos": 3,
-      "lemma_def": []
+      "lemma_def": [ "характеристика" ]
     },
     {
       "target": "трус+ам",
@@ -132190,7 +132115,7 @@
       "frequency": 9,
       "lemma": "трусы",
       "stress_pos": 5,
-      "lemma_def": []
+      "lemma_def": [ "одежда" ]
     }
   ],
   "трусами": [
@@ -132203,7 +132128,7 @@
       "frequency": 18,
       "lemma": "трус",
       "stress_pos": 3,
-      "lemma_def": []
+      "lemma_def": [ "характеристика" ]
     },
     {
       "target": "трус+ами",
@@ -132214,7 +132139,7 @@
       "frequency": 9,
       "lemma": "трусы",
       "stress_pos": 5,
-      "lemma_def": []
+      "lemma_def": [ "одежда" ]
     }
   ],
   "трусах": [
@@ -132227,7 +132152,7 @@
       "frequency": 18,
       "lemma": "трус",
       "stress_pos": 3,
-      "lemma_def": []
+      "lemma_def": [ "характеристика" ]
     },
     {
       "target": "трус+ах",
@@ -132238,7 +132163,7 @@
       "frequency": 9,
       "lemma": "трусы",
       "stress_pos": 5,
-      "lemma_def": []
+      "lemma_def": [ "одежда" ]
     }
   ],
   "трусов": [
@@ -132252,7 +132177,7 @@
       "frequency": 18,
       "lemma": "трус",
       "stress_pos": 3,
-      "lemma_def": []
+      "lemma_def": [ "характеристика" ]
     },
     {
       "target": "трус+ов",
@@ -132263,7 +132188,7 @@
       "frequency": 9,
       "lemma": "трусы",
       "stress_pos": 5,
-      "lemma_def": []
+      "lemma_def": [ "одежда" ]
     }
   ],
   "трусы": [
@@ -132277,7 +132202,7 @@
       "frequency": 18,
       "lemma": "трус",
       "stress_pos": 3,
-      "lemma_def": []
+      "lemma_def": ["характеристика"]
     },
     {
       "target": "трус+ы",
@@ -132289,7 +132214,7 @@
       "frequency": 9,
       "lemma": "трусы",
       "stress_pos": 5,
-      "lemma_def": []
+      "lemma_def": ["одежда"]
     }
   ],
   "тупик": [
