@@ -531,8 +531,8 @@ public partial class MainWindow : Window
     
     private async void ApplyStressPhrases_Click(object sender, RoutedEventArgs e)
     {
-        await ApplyStressFromDictionariesAsync(
-            [_settings.Homograph.DictionaryPhrasesPath],
+        await ApplyStressPhrasesAsync(
+            _settings.Homograph.DictionaryPhrasesPath,
             "Не задан путь к словарю ударений для фраз.");
     }
 
@@ -541,6 +541,68 @@ public partial class MainWindow : Window
         await ApplyStressFromDictionariesAsync(
             _settings.Homograph.DicAPath,
             "Не задан путь к словарям ударений.");
+    }
+
+    private async Task ApplyStressPhrasesAsync(string rawDictionaryPath, string emptyPathMessage)
+    {
+        var text = GetPlainText();
+        if (string.IsNullOrWhiteSpace(text))
+            return;
+
+        if (string.IsNullOrWhiteSpace(rawDictionaryPath))
+        {
+            MessageBox.Show(emptyPathMessage, "Внимание",
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        var dictionaryPath = ResolvePath(rawDictionaryPath);
+        if (!File.Exists(dictionaryPath))
+        {
+            MessageBox.Show($"Словарь не найден:\n{dictionaryPath}", "Внимание",
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        try
+        {
+            TextEditor.IsReadOnly = true;
+            StressProgress.Visibility = Visibility.Visible;
+            StatusInfo.Text = "Расстановка ударений для фраз…";
+
+            var updated = await Task.Run(() =>
+            {
+                var phraseMap = AccentService.LoadStressPhraseEntries(dictionaryPath);
+                if (phraseMap.Count == 0)
+                    return (Text: text, HasMatches: false);
+
+                var resolved = AccentService.ApplyStressPhrases(text, phraseMap);
+                var hasMatches = !string.Equals(resolved, text, StringComparison.Ordinal);
+                return (Text: resolved, HasMatches: hasMatches);
+            });
+
+            if (!updated.HasMatches)
+            {
+                MessageBox.Show("Совпадения фраз не найдены в словаре или тексте.", "Внимание",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            SetPlainText(updated.Text);
+            await UpdateStatisticsAsync(updated.Text);
+            StatusInfo.Text = "Расстановка ударений для фраз завершена.";
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Ошибка:\n{ex.Message}", "Ошибка",
+                MessageBoxButton.OK, MessageBoxImage.Error);
+            StatusInfo.Text = "";
+        }
+        finally
+        {
+            StressProgress.Visibility = Visibility.Collapsed;
+            TextEditor.IsReadOnly = false;
+        }
     }
 
     private async Task ApplyStressFromDictionariesAsync(
