@@ -1,3 +1,6 @@
+using ICSharpCode.AvalonEdit.Document;
+using Microsoft.Extensions.Options;
+using Microsoft.Win32;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
@@ -9,9 +12,7 @@ using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using ICSharpCode.AvalonEdit.Document;
-using Microsoft.Extensions.Options;
-using Microsoft.Win32;
+using System.Windows.Media.TextFormatting;
 using WhiteBehemoth.Resolver;
 using WhiteBehemoth.Resolver.Llm;
 using WhiteBehemoth.Resolver.Models;
@@ -129,18 +130,23 @@ public partial class MainWindow : Window
         var dlg = new OpenFileDialog
         {
             Title = "Открыть текстовый файл",
-            Filter = "Текстовые файлы (*.txt;*.fb2)|*.txt;*.fb2|fb2 (*.fb2)|*.fb2|Все файлы (*.*)|*.*"
+            Filter = "Текстовые файлы (*.txt;*.fb2)|*.txt;*.fb2|fb2 (*.fb2)|*.fb2|Все файлы (*.*)|*.*",
+            Multiselect = true,
         };
         if (dlg.ShowDialog() != true) return;
 
-        string text = File.ReadAllText(dlg.FileName, encoding);
-        if (Path.GetExtension(dlg.FileName) == ".fb2")
+        string text = "";
+        foreach (var file in dlg.FileNames)
         {
-            var fd = new Fb2.Document.Fb2Document();
-            await fd.LoadAsync(text, new Fb2.Document.LoadingOptions.Fb2LoadingOptions());
-            text = string.Join(Environment.NewLine, fd.Bodies);
+            var textTemp = File.ReadAllText(file, encoding);
+            if (Path.GetExtension(file) == ".fb2")
+            {
+                var fd = new Fb2.Document.Fb2Document();
+                await fd.LoadAsync(textTemp, new Fb2.Document.LoadingOptions.Fb2LoadingOptions());
+                textTemp = string.Join(Environment.NewLine, fd.Bodies);
+            }
+            text += textTemp + Environment.NewLine;
         }
-
         SetPlainText(text);
         ResetHomographState();
         _currentFilePath = dlg.FileName;
@@ -522,43 +528,98 @@ public partial class MainWindow : Window
             ? $"Неизвестных слов: {unknownMatches.Count}"
             : "Неизвестных слов не найдено.";
     }
-    private void ApplyStress_Click(object sender, RoutedEventArgs e)
+    
+    private async void ApplyStressPhrases_Click(object sender, RoutedEventArgs e)
+    {
+        await ApplyStressFromDictionariesAsync(
+            [_settings.Homograph.DictionaryPhrasesPath],
+            "Не задан путь к словарю ударений для фраз.");
+    }
+
+    private async void ApplyStress_Click(object sender, RoutedEventArgs e)
+    {
+        await ApplyStressFromDictionariesAsync(
+            _settings.Homograph.DicAPath,
+            "Не задан путь к словарям ударений.");
+    }
+
+    private async Task ApplyStressFromDictionariesAsync(
+        IEnumerable<string> rawDictionaryPaths,
+        string emptyPathsMessage)
     {
         var text = GetPlainText();
         if (string.IsNullOrWhiteSpace(text))
-        {
             return;
-        }
 
-        if (_settings.Homograph.DicAPath.Count == 0)
+        var configuredPaths = rawDictionaryPaths
+            .Where(p => !string.IsNullOrWhiteSpace(p))
+            .ToList();
+
+        if (configuredPaths.Count == 0)
         {
-            MessageBox.Show("Не задан путь к словарям ударений.", "Внимание",
+            MessageBox.Show(emptyPathsMessage, "Внимание",
                 MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
-        var wordSet = new HashSet<string>(
-            TextAnalyzer.WordRegex().Matches(text).Select(m => m.Value.ToLowerInvariant()));
-
-        var stressMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var rawPath in _settings.Homograph.DicAPath)
+        try
         {
-            var path = ResolvePath(rawPath);
-            if (!File.Exists(path)) continue;
+            TextEditor.IsReadOnly = true;
+            StressProgress.Visibility = Visibility.Visible;
+            StatusInfo.Text = "Расстановка ударений…";
 
-            foreach (var (word, entry) in AccentService.LoadStressEntries(path, wordSet))
-                stressMap.TryAdd(word, entry);
+            var dictionaryPaths = configuredPaths
+                .Select(ResolvePath)
+                .Where(File.Exists)
+                .ToList();
+
+            var updated = await Task.Run(() =>
+            {
+                var wordSet = new HashSet<string>(
+                    TextAnalyzer.WordRegex().Matches(text).Select(m => m.Value.ToLowerInvariant()));
+
+                var stressMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var dictionaryPath in dictionaryPaths)
+                    ApplyStressDictionary(dictionaryPath, wordSet, stressMap);
+
+                if (stressMap.Count == 0)
+                    return (Text: text, HasMatches: false);
+
+                var resolved = AccentService.ApplyStressMarks(text, stressMap);
+                return (Text: resolved, HasMatches: true);
+            });
+
+            if (!updated.HasMatches)
+            {
+                MessageBox.Show("Нет coincidences в словарях ударений.", "Внимание",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            SetPlainText(updated.Text);
+            await UpdateStatisticsAsync(updated.Text);
+            StatusInfo.Text = "Расстановка ударений завершена.";
         }
-
-        if (stressMap.Count == 0)
+        catch (Exception ex)
         {
-            MessageBox.Show("Нет coincidences в словарях ударений.", "Внимание",
-                MessageBoxButton.OK, MessageBoxImage.Information);
-            return;
+            MessageBox.Show($"Ошибка:\n{ex.Message}", "Ошибка",
+                MessageBoxButton.OK, MessageBoxImage.Error);
+            StatusInfo.Text = "";
         }
+        finally
+        {
+            StressProgress.Visibility = Visibility.Collapsed;
+            TextEditor.IsReadOnly = false;
+        }
+    }
 
-        var updated = AccentService.ApplyStressMarks(text, stressMap);
-        SetPlainText(updated);
+    private static void ApplyStressDictionary(
+        string dictionaryPath,
+        HashSet<string> wordSet,
+        Dictionary<string, string> stressMap)
+    {
+        foreach (var (word, entry) in AccentService.LoadStressEntries(dictionaryPath, wordSet))
+            stressMap.TryAdd(word, entry);
     }
 
     // ── Navigation ───────────────────────────────────────────────────────────
@@ -1156,7 +1217,12 @@ public partial class MainWindow : Window
     }
 
     // ── Browse dialogs ───────────────────────────────────────────────────────
-
+    private void BrowseDicPhrases_Click(object sender, RoutedEventArgs e)
+    {
+        var dlg = new OpenFileDialog { Title = "Словарь ударений для фраз", Filter = "JSON (*.json)|*.json" };
+        if (dlg.ShowDialog() == true) DicPhrasePath.Text = dlg.FileName;
+    }
+    
     private void BrowseDic_Click(object sender, RoutedEventArgs e)
     {
         var dlg = new OpenFileDialog { Title = "Словарь омографов", Filter = "JSON (*.json)|*.json" };
@@ -1323,6 +1389,37 @@ public partial class MainWindow : Window
     private string GetPlainText()
     {
         return TextEditor.Text;
+    }
+
+    public bool TrySaveCrashBackup(out string? backupPath, out string? error)
+    {
+        backupPath = null;
+        error = null;
+
+        try
+        {
+            var text = GetPlainText();
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                error = "Текст пуст.";
+                return false;
+            }
+
+            var targetFolder = ResolvePath(_settings.General.TargetFolder);
+            Directory.CreateDirectory(targetFolder);
+
+            backupPath = Path.Combine(
+                targetFolder,
+                $"yara-crash-{DateTime.Now:yyyyMMdd-HHmmss}.bak");
+
+            File.WriteAllText(backupPath, text, Encoding.UTF8);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+            return false;
+        }
     }
 
     private void SetPlainText(string text)

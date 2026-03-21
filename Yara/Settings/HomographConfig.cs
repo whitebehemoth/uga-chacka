@@ -17,6 +17,13 @@ public class HomographConfig : INotifyPropertyChanged
         set { if (field != value) { field = value; OnPropertyChanged(); } }
     }
 
+    public string DictionaryPhrasesPath
+    {
+        get => field ?? "";
+        set { if (field != value) { field = value; OnPropertyChanged(); } }
+    }
+    
+
     public List<string> DicAPath
     {
         get => field ?? [];

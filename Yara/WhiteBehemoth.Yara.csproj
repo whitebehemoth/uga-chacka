@@ -30,7 +30,12 @@
     <Content Include="..\dics\dic-yo.json" Link="dics\dic-yo.json">
      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-      
+    <Content Include="..\dics\dic-al0-1.json" Link="dics\dic-al0-1.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\dics\dic-alp.json" Link="dics\dic-alp.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
       <Content Include="..\dics\clean.rex" Link="dics\clean.rex">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

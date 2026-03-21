@@ -45,8 +45,10 @@
                 <MenuItem Header="_Выход" Click="Exit_Click"/>
             </MenuItem>
             <MenuItem Header="Обработка текста">
-                <MenuItem Header="Ударения в омографы через LLM" Click="ResolveHomographs_Click"/>
-                <MenuItem Header="Ударения в остальные слова" Click="ApplyStress_Click"/>
+                <MenuItem Header="1. Ударения во фразы" Click="ApplyStressPhrases_Click"/>
+                <MenuItem Header="2. Ударения в омографы через LLM" Click="ResolveHomographs_Click"/>
+                <MenuItem Header="3. Ударения в остальные слова" Click="ApplyStress_Click"/>
+                <Separator/>
                 <MenuItem Header="Обновить подсветку омографов" Click="RescanHomographs_Click"/>
                 <MenuItem Header="Подсветить неизвестные слова" Click="RescanNostress_Click"/>
                 <Separator/>
@@ -72,6 +74,11 @@
                     <TextBlock x:Name="StatusSentences" Text="—"/>
                     <TextBlock Text="   Омографов: " Margin="8,0,0,0"/>
                     <TextBlock x:Name="StatusHomographCount" Text="—"/>
+                    <ProgressBar x:Name="StressProgress"
+                                 Width="120" Height="14"
+                                 Margin="12,0,0,0"
+                                 IsIndeterminate="True"
+                                 Visibility="Collapsed"/>
                     <Button x:Name="CancelBtn"
                             Content="Отмена"
                             Click="CancelBtn_Click"
@@ -307,6 +314,13 @@
                     <TabItem Header="Общие">
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
                             <StackPanel Margin="16,12" MaxWidth="480">
+                                <TextBlock Text="Словарь ударений для фраз " Margin="0,0,0,4"/>
+                                <DockPanel Margin="0,0,0,8">
+                                    <Button DockPanel.Dock="Right" Content="…" Width="32"
+                                          Margin="4,0,0,0" Click="BrowseDicPhrases_Click"/>
+                                    <TextBox x:Name="DicPhrasePath"
+                                    Text="{Binding Homograph.DictionaryPhrasesPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                </DockPanel>
                                 <TextBlock Text="Словарь омографов (dic.json)" Margin="0,0,0,4"/>
                                 <DockPanel Margin="0,0,0,8">
                                     <Button DockPanel.Dock="Right" Content="…" Width="32"
